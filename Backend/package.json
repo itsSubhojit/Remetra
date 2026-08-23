@@ -1,8 +1,10 @@
 {
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "dev": "nodemon index.js",
+    "start": "node index.js"
   },
+  "type": "module",
+  
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
