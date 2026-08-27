@@ -1,3 +1,6 @@
+# Firebase service account key (sensitive credentials)
+src/config/serviceAccountKey.json
+
 # Logs
 logs
 *.log
