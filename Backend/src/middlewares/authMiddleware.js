@@ -16,6 +16,7 @@ export const firebaseAuth = asyncHandler(async(req, res, next) =>{
         req.user = decodedTokenInfo
         next()
     } catch (error) {
+        console.log(error)
         throw new ApiError(401, "Fail To Verify User!")
     }
 })
