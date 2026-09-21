@@ -4,7 +4,7 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {Payment} from "../models/Payment.model.js"
 
 
-export const paymentUser = asyncHandler(async(req, res, next) =>{
+export const paymentUser = asyncHandler(async (req, res, next) =>{
     const {personName, title, notes, category, provider, amount, dueDate, frequency, status, paidDate, reminderSent} = req.body
 
     if(!personName || !title || !category || !provider || !amount || !dueDate || !frequency){
@@ -31,5 +31,20 @@ export const paymentUser = asyncHandler(async(req, res, next) =>{
     return res.status(201)
     .json(
         new ApiResponse(201, "Payment Created Successfully", createdPayment)
+    )
+})
+
+
+export const getAllPayments = asyncHandler(async (req, res, next) =>{
+    const firebaseUid = req.user.uid
+    if(!firebaseUid){
+        throw new ApiError(401, "User id Not found!")
+    }
+
+    const userData = await Payment.find({firebaseUid: firebaseUid})
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200, "UserData Fetched Successfully!", userData)
     )
 })
