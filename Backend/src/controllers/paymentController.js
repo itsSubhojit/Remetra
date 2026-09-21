@@ -48,3 +48,53 @@ export const getAllPayments = asyncHandler(async (req, res, next) =>{
         new ApiResponse(200, "UserData Fetched Successfully!", userData)
     )
 })
+
+
+export const getPaymentId = asyncHandler(async (req, res, next) =>{
+    const id = req.params.id
+    const firebaseUid = req.user.uid
+
+    const documentId = await Payment.findOne({_id: id, firebaseUid: firebaseUid})
+    if(!documentId){
+        throw new ApiError(404, "Payment Not Found!")
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200, "Payment Found...", documentId)
+    )
+})
+
+
+export const updatePayment = asyncHandler(async (req, res, next) =>{
+    const id = req.params.id
+    const firebaseUid = req.user.uid
+
+    const update = await Payment.findOneAndUpdate({_id: id, firebaseUid: firebaseUid}, req.body, {new: true})
+    if(!update){
+        throw new ApiError(404, "Can't Update... Please, try again later!")
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200, "Update Successful", update)
+    )
+
+})
+
+
+export const deletePayment = asyncHandler(async (req, res, next) =>{
+    const id = req.params.id
+    const firebaseUid = req.user.uid
+
+    const deleteDetails = await Payment.findOneAndDelete({_id: id, firebaseUid: firebaseUid})
+    if(!deleteDetails){
+        throw new ApiError(404, "Not Found!!!")
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200, "Deleted Successfully", deleteDetails)
+    )
+
+})
