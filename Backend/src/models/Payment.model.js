@@ -22,13 +22,33 @@ const paymentSchema = new Schema(
             enum:["Recharge","Electricity","Subscription"],
             required:true
         },
+        consumerId: {
+            type: String,
+            trim: true,
+            default: null
+        },
         provider:{
             type:String,
             required:true
         },
+        mobileNumber: {
+            type: String,
+            trim: true,
+            default: null
+        },
+        rechargeType: {
+            type: String,
+            enum: ["Prepaid", "Postpaid"],
+            default: null
+        },
         amount:{
             type:Number,
             required:true
+        },
+        validityDays: {
+            type: Number,
+            min: 1,
+            default: null
         },
         dueDate:{
             type:Date,
@@ -45,7 +65,8 @@ const paymentSchema = new Schema(
             enum:["Upcoming","Due","Overdue","Paid"]
         },
         paidDate:{
-            type:Date
+            type:Date,
+            default: null
         },
         reminderSent:{
             type:Boolean,

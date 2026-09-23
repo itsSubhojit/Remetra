@@ -5,7 +5,7 @@ import {Payment} from "../models/Payment.model.js"
 
 
 export const paymentUser = asyncHandler(async (req, res, next) =>{
-    const {personName, title, notes, category, provider, amount, dueDate, frequency, status, paidDate, reminderSent} = req.body
+    const {personName, title, notes, category,  consumerId, provider,mobileNumber, rechargeType, amount, validityDays, dueDate, frequency, status, paidDate, reminderSent} = req.body
 
     if(!personName || !title || !category || !provider || !amount || !dueDate || !frequency){
         throw new ApiError(400, "Fields are required!")
@@ -19,8 +19,12 @@ export const paymentUser = asyncHandler(async (req, res, next) =>{
         title,
         notes,
         category,
+        consumerId,
         provider,
+        mobileNumber,
+        rechargeType,
         amount,
+        validityDays,
         dueDate,
         frequency,
         status,

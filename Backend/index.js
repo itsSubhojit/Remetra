@@ -1,6 +1,7 @@
 import app from "./app.js";
 import {dbConnect} from "./src/config/db.js";
 import { sendReminderEmail } from "./src/services/emailService.js";
+import reminderJob from "./src/jobs/reminderJob.js";
 
 
 dbConnect()
@@ -15,3 +16,4 @@ dbConnect()
 
 
 //sendReminderEmail("your-email@gmail.com", "Test", "This is a test reminder")
+
