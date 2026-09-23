@@ -1,5 +1,6 @@
 import app from "./app.js";
 import {dbConnect} from "./src/config/db.js";
+import { sendReminderEmail } from "./src/services/emailService.js";
 
 
 dbConnect()
@@ -11,3 +12,6 @@ dbConnect()
     console.log("Server Start Fail!!!")
     process.exit(1);
 })
+
+
+//sendReminderEmail("your-email@gmail.com", "Test", "This is a test reminder")
