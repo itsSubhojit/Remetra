@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Remetra - Payments Management</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-container": "#00a6e0",
+            "error-container": "#93000a",
+            "on-error": "#690005",
+            "tertiary-container": "#00885d",
+            "on-surface": "#dfe2ee",
+            "surface-container": "#1c2028",
+            "on-background": "#dfe2ee",
+            "on-primary-container": "#0d0096",
+            "tertiary": "#4edea3",
+            "surface-container-high": "#262a33",
+            "on-tertiary-container": "#000703",
+            "outline": "#908fa0",
+            "inverse-on-surface": "#2c3039",
+            "surface-container-low": "#181c24",
+            "surface-tint": "#c0c1ff",
+            "secondary-fixed": "#c4e7ff",
+            "on-secondary-container": "#00374d",
+            "surface-bright": "#353942",
+            "secondary": "#7bd0ff",
+            "surface-dim": "#0f131c",
+            "surface-container-highest": "#31353e",
+            "surface-variant": "#31353e",
+            "on-tertiary": "#003824",
+            "inverse-surface": "#dfe2ee",
+            "on-primary": "#1000a9",
+            "on-tertiary-fixed": "#002113",
+            "primary": "#c0c1ff",
+            "outline-variant": "#464554",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-secondary-fixed": "#001e2c",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "primary-container": "#8083ff",
+            "surface-container-lowest": "#0a0e16",
+            "background": "#0f131c",
+            "tertiary-fixed-dim": "#4edea3",
+            "secondary-fixed-dim": "#7bd0ff",
+            "on-secondary-fixed-variant": "#004c69",
+            "on-error-container": "#ffdad6",
+            "on-primary-fixed": "#07006c",
+            "on-secondary": "#00354a",
+            "primary-fixed": "#e1e0ff",
+            "surface": "#0f131c",
+            "tertiary-fixed": "#6ffbbe",
+            "on-surface-variant": "#c7c4d7",
+            "primary-fixed-dim": "#c0c1ff",
+            "error": "#ffb4ab",
+            "inverse-primary": "#494bd6"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-sm": "1rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "margin": "2rem",
+            "gutter": "1.5rem",
+            "space-xl": "2.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "margin-sm": "1rem"
+          },
+          "fontFamily": {
+            "body-md": ["Inter"],
+            "display-mobile": ["Outfit"],
+            "label-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-md": ["Outfit"],
+            "body-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Outfit"],
+            "numeric-metric": ["Outfit"],
+            "label-sm": ["Inter"],
+            "display": ["Outfit"],
+            "headline-sm": ["Outfit"]
+          },
+          "fontSize": {
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "display-mobile": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+            "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+            "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+            "numeric-metric": ["32px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+            "label-sm": ["10px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+            "display": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+            "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "500"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .status-paid {
+      background-color: rgba(16, 185, 129, 0.12);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .status-due {
+      background-color: rgba(245, 158, 11, 0.12);
+      color: #F59E0B;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .status-overdue {
+      background-color: rgba(239, 68, 68, 0.12);
+      color: #EF4444;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .status-upcoming {
+      background-color: rgba(56, 189, 248, 0.12);
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+    .glass-card {
+      background: #151D2A;
+      border: 1px solid #1E293B;
+      border-radius: 1rem;
+    }
+    .glass-card-interactive:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px -3px rgba(99, 102, 241, 0.15);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0B0F17;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #464554;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body-md min-h-screen flex flex-col antialiased selection:bg-primary selection:text-on-primary">
+<!-- Main Workspace Wrapper -->
+<div class="flex flex-1 min-h-screen">
+<!-- DESKTOP SIDEBAR (From Shared Components JSON Anchor: SideNavBar) -->
+<aside class="hidden md:flex flex-col justify-between h-screen w-64 p-4 z-30 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant">
+<!-- Header / Logo Cluster -->
+<div class="space-y-6">
+<div class="flex items-center gap-3 px-2 py-1">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-container to-secondary-container flex items-center justify-center text-on-primary-container shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined text-2xl font-bold">account_balance_wallet</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-on-surface tracking-tight leading-tight">Remetra</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant leading-none">Household Vault</p>
+</div>
+</div>
+<!-- Primary CTA from JSON: "cta": "New Entry" -->
+<button class="w-full bg-primary-container hover:bg-opacity-90 text-on-primary font-label-lg text-label-lg py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all duration-150 active:scale-[0.98]" onclick="openDrawer('Add New Payment')">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+<span>New Entry</span>
+</button>
+<!-- Navigation Tabs: ['Overview', 'Commitments', 'Analytics', 'Obligations', 'Archive'] -->
+<!-- Destination / Lock Rule: Current page is Payments/Commitments. Highlighting active state! -->
+<nav class="space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-3 py-2 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors text-label-lg font-label-lg" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Overview</span>
+</a>
+<!-- Active Tab: Commitments / Obligations (Payments) -->
+<a class="flex items-center gap-3 text-primary font-bold bg-surface-container-low rounded-lg px-3 py-2 border-l-2 border-primary transition-all text-label-lg font-label-lg" href="#">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span>Commitments</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-3 py-2 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors text-label-lg font-label-lg" href="#">
+<span class="material-symbols-outlined text-lg">insights</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-3 py-2 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors text-label-lg font-label-lg" href="#">
+<span class="material-symbols-outlined text-lg">receipt_long</span>
+<span>Obligations</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-3 py-2 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors text-label-lg font-label-lg" href="#">
+<span class="material-symbols-outlined text-lg">inventory_2</span>
+<span>Archive</span>
+</a>
+</nav>
+</div>
+<!-- Footer Actions: Settings, Support & Profile -->
+<div class="space-y-4 pt-4 border-t border-outline-variant/40">
+<div class="space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-3 py-2 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors text-label-lg font-label-lg" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-3 py-2 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors text-label-lg font-label-lg" href="#">
+<span class="material-symbols-outlined text-lg">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+<!-- User Profile Card in Sidebar -->
+<div class="flex items-center gap-3 p-2 rounded-xl bg-surface-container-low border border-outline-variant/30">
+<img class="w-9 h-9 rounded-full object-cover border border-outline-variant" data-alt="Close up photographic portrait of a modern finance executive wearing casual charcoal linen shirt looking confident in a moody minimalist office setting with subtle dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_jJZtKd_Moo8ca8eLz3vFBLBmS4vRJsr5eQsEFnKPT1pijs_jDUl4dKUCX8Ac5VRHhACeT79WjPpiIYTeQVNstF4P5fIH94WKK11EPlUmqoWEpIF0Tbmy42k2Fs0uNNVGDS6UxtygtbzGsjG3Xw3XQ7GwbE4n0d6ias4i8LUrt2Zen5pmphheskEnBaPke_J4iAXQgrc9LlXYN-dYz0Z9Y6pKKcUzi3q5y71xi9PJaM_4w9gubERFMw"/>
+<div class="overflow-hidden">
+<p class="text-label-md font-label-md text-on-surface truncate">Subhojit Ghosh</p>
+<p class="text-label-sm font-label-sm text-outline truncate">Prime Household</p>
+</div>
+<span class="material-symbols-outlined text-outline ml-auto text-base">unfold_more</span>
+</div>
+</div>
+</aside>
+<!-- CONTENT CANVAS -->
+<main class="flex-1 md:ml-64 pb-24 md:pb-12 min-h-screen bg-surface-container-lowest">
+<!-- TOP BAR NAV (Shared Components JSON Anchor: TopNavBar) -->
+<header class="flex justify-between items-center w-full px-6 py-3 sticky top-0 z-20 bg-surface border-b border-outline-variant">
+<!-- Search Input on Left as specified in JSON -->
+<div class="flex items-center gap-4 flex-1 max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+<input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-sm text-on-surface placeholder-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" id="globalSearch" placeholder="Search by provider, title, person..." type="text"/>
+</div>
+</div>
+<!-- Right Side Cluster -->
+<div class="flex items-center gap-3 ml-4">
+<button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors relative" title="Notifications">
+<span class="material-symbols-outlined text-xl">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary-container"></span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Help">
+<span class="material-symbols-outlined text-xl">help_outline</span>
+</button>
+<div class="h-5 w-[1px] bg-outline-variant mx-1 hidden sm:block"></div>
+<!-- Primary Top Button -->
+<button class="bg-primary-container text-on-primary hover:opacity-95 font-label-md text-label-md px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 active:scale-[0.98] transition-all" onclick="openDrawer('Add New Payment')">
+<span class="material-symbols-outlined text-base">add</span>
+<span class="hidden sm:inline">Add Payment</span>
+</button>
+</div>
+</header>
+<!-- PAGE MAIN BODY -->
+<div class="px-4 md:px-8 py-6 max-w-7xl mx-auto space-y-6">
+<!-- Executive Header Area -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="text-headline-lg font-headline-lg text-on-surface">Payments</h2>
+<span class="text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-medium">12 Active</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Manage all your recurring payments, subscriptions, and household utilities.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="sm:flex hidden items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-xl font-label-md text-label-md hover:bg-opacity-90 shadow-md shadow-primary-container/25 transition-all" onclick="openDrawer('Add New Payment')">
+<span class="material-symbols-outlined text-lg">add</span>
+<span>+ Add Payment</span>
+</button>
+</div>
+</div>
+<!-- METRIC SUMMARY TILES (Bento Style) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Total Pending Card -->
+<div class="glass-card p-5 glass-card-interactive transition-all">
+<div class="flex items-center justify-between text-outline text-label-sm font-label-sm mb-2">
+<span>UPCOMING COMMITMENTS</span>
+<span class="material-symbols-outlined text-secondary text-lg">schedule</span>
+</div>
+<div class="text-numeric-metric font-numeric-metric text-on-surface font-semibold">₹14,890</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="status-upcoming px-2 py-0.5 rounded-full text-label-sm font-label-sm">4 Bills Pending</span>
+<span class="text-body-sm font-body-sm text-outline">next 7 days</span>
+</div>
+</div>
+<!-- Overdue Warning Card with Luminous Status Flare -->
+<div class="glass-card p-5 relative overflow-hidden glass-card-interactive transition-all border-error-container/40" style="box-shadow: 0 0 24px -6px rgba(239, 68, 68, 0.15);">
+<div class="flex items-center justify-between text-error text-label-sm font-label-sm mb-2">
+<span>OVERDUE ATTENTION</span>
+<span class="material-symbols-outlined text-error text-lg">warning</span>
+</div>
+<div class="text-numeric-metric font-numeric-metric text-on-surface font-semibold">₹2,450</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="status-overdue px-2 py-0.5 rounded-full text-label-sm font-label-sm">1 Bill Overdue</span>
+<span class="text-body-sm font-body-sm text-outline">Action required</span>
+</div>
+</div>
+<!-- Monthly Paid Out Card -->
+<div class="glass-card p-5 glass-card-interactive transition-all">
+<div class="flex items-center justify-between text-outline text-label-sm font-label-sm mb-2">
+<span>CLEARED THIS MONTH</span>
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+</div>
+<div class="text-numeric-metric font-numeric-metric text-on-surface font-semibold">₹31,200</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="status-paid px-2 py-0.5 rounded-full text-label-sm font-label-sm">8 Processed</span>
+<span class="text-body-sm font-body-sm text-tertiary font-medium">96% on-time</span>
+</div>
+</div>
+<!-- Quick Household Vault Status -->
+<div class="glass-card p-5 glass-card-interactive transition-all">
+<div class="flex items-center justify-between text-outline text-label-sm font-label-sm mb-2">
+<span>CYCLE RUN-RATE</span>
+<span class="material-symbols-outlined text-primary text-lg">bolt</span>
+</div>
+<div class="text-numeric-metric font-numeric-metric text-on-surface font-semibold">₹48,540</div>
+<!-- Progress indicator -->
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-3 overflow-hidden">
+<div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full" style="width: 68%;"></div>
+</div>
+<p class="text-label-sm font-label-sm text-outline mt-1.5">68% of monthly budget allocated</p>
+</div>
+</div>
+<!-- FILTER BAR SECTION -->
+<div class="glass-card p-4 space-y-4">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<!-- Category Chips -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 custom-scroll">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider mr-1">Category:</span>
+<button class="category-btn px-3 py-1.5 rounded-full text-label-sm font-label-sm bg-primary text-on-primary font-medium transition-all shadow-sm" onclick="filterCategory('all', this)">All</button>
+<button class="category-btn px-3 py-1.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" onclick="filterCategory('recharge', this)">Recharge</button>
+<button class="category-btn px-3 py-1.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" onclick="filterCategory('electricity', this)">Electricity</button>
+<button class="category-btn px-3 py-1.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" onclick="filterCategory('subscription', this)">Subscription</button>
+</div>
+<!-- Person & Sorting Dropdowns -->
+<div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+<!-- Person Dropdown Filter -->
+<div class="flex items-center gap-2 min-w-[150px]">
+<span class="material-symbols-outlined text-outline text-base">person</span>
+<select class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-body-sm font-body-sm rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="personFilter" onchange="applyFilters()">
+<option value="all">All Persons</option>
+<option value="Subhojit">Subhojit</option>
+<option value="Mom">Mom</option>
+<option value="Family">Family</option>
+</select>
+</div>
+<!-- Sorting Dropdown -->
+<div class="flex items-center gap-2 min-w-[170px]">
+<span class="material-symbols-outlined text-outline text-base">swap_vert</span>
+<select class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-body-sm font-body-sm rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary" id="sortFilter" onchange="applySorting()">
+<option value="due-soon">Due Date (Soonest)</option>
+<option value="amount-high">Amount (High-Low)</option>
+<option value="recent">Recently Added</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Status Chips Sub-Row -->
+<div class="flex items-center gap-2 pt-2 border-t border-outline-variant/30 overflow-x-auto custom-scroll">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider mr-1">Status:</span>
+<button class="status-btn px-3 py-1 rounded-full text-label-sm font-label-sm bg-surface-bright text-on-surface font-semibold transition-all" onclick="filterStatus('all', this)">All</button>
+<button class="status-btn status-upcoming px-3 py-1 rounded-full text-label-sm font-label-sm hover:opacity-80 transition-all" onclick="filterStatus('upcoming', this)">Upcoming (Sky)</button>
+<button class="status-btn status-due px-3 py-1 rounded-full text-label-sm font-label-sm hover:opacity-80 transition-all" onclick="filterStatus('due', this)">Due (Amber)</button>
+<button class="status-btn status-overdue px-3 py-1 rounded-full text-label-sm font-label-sm hover:opacity-80 transition-all" onclick="filterStatus('overdue', this)">Overdue (Red)</button>
+<button class="status-btn status-paid px-3 py-1 rounded-full text-label-sm font-label-sm hover:opacity-80 transition-all" onclick="filterStatus('paid', this)">Paid (Emerald)</button>
+</div>
+</div>
+<!-- PAYMENT DATA PRESENTATION -->
+<!-- 1. DESKTOP VIEW TABLE (Visible ≥ 768px) -->
+<div class="hidden md:block glass-card overflow-hidden">
+<div class="overflow-x-auto custom-scroll">
+<table class="w-full text-left border-collapse" id="paymentsTable">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-low text-outline text-label-sm font-label-sm uppercase tracking-wider h-11">
+<th class="py-3 px-4">Person</th>
+<th class="py-3 px-4">Title &amp; Provider</th>
+<th class="py-3 px-4">Category</th>
+<th class="py-3 px-4">Provider</th>
+<th class="py-3 px-4 text-right">Amount</th>
+<th class="py-3 px-4">Due Date</th>
+<th class="py-3 px-4 text-center">Status</th>
+<th class="py-3 px-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30 text-body-md font-body-md" id="tableBody">
+<!-- Row 1: Airtel Postpaid (Overdue) -->
+<tr class="hover:bg-surface-container/60 transition-colors group" data-amount="2450" data-category="recharge" data-person="Subhojit" data-status="overdue">
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary border border-primary/20">
+                      Subhojit
+                    </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Airtel Postpaid Family Plan</div>
+<div class="text-body-sm font-body-sm text-outline">9845012345 • 4 Connections</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-base text-secondary">phone_iphone</span>
+<span>Recharge</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface">Airtel Telecom</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right font-numeric-metric font-semibold text-on-surface">
+                    ₹2,450
+                  </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-error font-medium text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">priority_high</span> Overdue 3 days
+                    </span>
+<span class="text-label-sm text-outline block">Oct 15, 2024</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-center">
+<span class="status-overdue px-2.5 py-0.5 rounded-full text-label-sm font-label-sm">Overdue</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 hover:bg-tertiary-container/30 text-tertiary rounded-lg transition-colors" onclick="togglePaid(this)" title="Mark as Paid">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDrawer('Edit Payment', 'Airtel Postpaid Family Plan')" title="Edit">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDetailsModal('Airtel Postpaid Family Plan', 'Subhojit', 'Recharge', 'Airtel Telecom', '₹2,450', 'Overdue', 'Monthly', '9845012345', null)" title="View Details">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-error-container/30 text-error rounded-lg transition-colors" onclick="openDeleteModal('Airtel Postpaid Family Plan')" title="Delete">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: BESCOM Electricity (Due Soon) -->
+<tr class="hover:bg-surface-container/60 transition-colors group" data-amount="3890" data-category="electricity" data-person="Family" data-status="due">
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-secondary border border-secondary/20">
+                      Family
+                    </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Main Residence Power Grid</div>
+<div class="text-body-sm font-body-sm text-outline">Acc: BES-99482-A</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-base text-amber-400">bolt</span>
+<span>Electricity</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface">BESCOM Karnataka</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right font-numeric-metric font-semibold text-on-surface">
+                    ₹3,890
+                  </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-amber-400 font-medium text-body-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span> Due in 2 days
+                    </span>
+<span class="text-label-sm text-outline block">Oct 20, 2024</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-center">
+<span class="status-due px-2.5 py-0.5 rounded-full text-label-sm font-label-sm">Due</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 hover:bg-tertiary-container/30 text-tertiary rounded-lg transition-colors" onclick="togglePaid(this)" title="Mark as Paid">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDrawer('Edit Payment', 'Main Residence Power Grid')" title="Edit">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDetailsModal('Main Residence Power Grid', 'Family', 'Electricity', 'BESCOM Karnataka', '₹3,890', 'Due Soon', 'Monthly', null, 'BES-99482-A')" title="View Details">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-error-container/30 text-error rounded-lg transition-colors" onclick="openDeleteModal('Main Residence Power Grid')" title="Delete">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Netflix Premium (Upcoming) -->
+<tr class="hover:bg-surface-container/60 transition-colors group" data-amount="649" data-category="subscription" data-person="Subhojit" data-status="upcoming">
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary border border-primary/20">
+                      Subhojit
+                    </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Netflix 4K Ultra HD</div>
+<div class="text-body-sm font-body-sm text-outline">Auto-renew active (HDFC Card)</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-base text-secondary">subscriptions</span>
+<span>Subscription</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface">Netflix India</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right font-numeric-metric font-semibold text-on-surface">
+                    ₹649
+                  </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-secondary font-medium text-body-sm">Renews in 6 days</span>
+<span class="text-label-sm text-outline block">Oct 24, 2024</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-center">
+<span class="status-upcoming px-2.5 py-0.5 rounded-full text-label-sm font-label-sm">Upcoming</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 hover:bg-tertiary-container/30 text-tertiary rounded-lg transition-colors" onclick="togglePaid(this)" title="Mark as Paid">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDrawer('Edit Payment', 'Netflix 4K Ultra HD')" title="Edit">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDetailsModal('Netflix 4K Ultra HD', 'Subhojit', 'Subscription', 'Netflix India', '₹649', 'Upcoming', 'Monthly', null, null)" title="View Details">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-error-container/30 text-error rounded-lg transition-colors" onclick="openDeleteModal('Netflix 4K Ultra HD')" title="Delete">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Mom's Jio Prepaid (Paid) -->
+<tr class="hover:bg-surface-container/60 transition-colors group" data-amount="899" data-category="recharge" data-person="Mom" data-status="paid">
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-tertiary border border-tertiary/20">
+                      Mom
+                    </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Jio 84-Day True 5G Pack</div>
+<div class="text-body-sm font-body-sm text-outline">9821098765 • 2GB/Day</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-base text-secondary">phone_iphone</span>
+<span>Recharge</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface">Reliance Jio</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right font-numeric-metric font-semibold text-on-surface">
+                    ₹899
+                  </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-tertiary font-medium text-body-sm">Paid on Oct 12</span>
+<span class="text-label-sm text-outline block">Valid till Jan 04</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-center">
+<span class="status-paid px-2.5 py-0.5 rounded-full text-label-sm font-label-sm">Paid</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 hover:bg-surface-container text-tertiary rounded-lg transition-colors" onclick="togglePaid(this)" title="Mark as Pending">
+<span class="material-symbols-outlined text-lg">check_box</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDrawer('Edit Payment', 'Jio 84-Day True 5G Pack')" title="Edit">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDetailsModal('Jio 84-Day True 5G Pack', 'Mom', 'Recharge', 'Reliance Jio', '₹899', 'Paid', 'Quarterly (84 Days)', '9821098765', null)" title="View Details">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-error-container/30 text-error rounded-lg transition-colors" onclick="openDeleteModal('Jio 84-Day True 5G Pack')" title="Delete">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Mom Home Electricity (Paid) -->
+<tr class="hover:bg-surface-container/60 transition-colors group" data-amount="1420" data-category="electricity" data-person="Mom" data-status="paid">
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-tertiary border border-tertiary/20">
+                      Mom
+                    </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Kolkata Flat Meter</div>
+<div class="text-body-sm font-body-sm text-outline">CESC Consumer No: 83719002</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-base text-amber-400">bolt</span>
+<span>Electricity</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface">CESC Limited</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right font-numeric-metric font-semibold text-on-surface">
+                    ₹1,420
+                  </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-tertiary font-medium text-body-sm">Paid on Oct 14</span>
+<span class="text-label-sm text-outline block">Next cycle Nov 14</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-center">
+<span class="status-paid px-2.5 py-0.5 rounded-full text-label-sm font-label-sm">Paid</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 hover:bg-surface-container text-tertiary rounded-lg transition-colors" onclick="togglePaid(this)" title="Mark as Pending">
+<span class="material-symbols-outlined text-lg">check_box</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDrawer('Edit Payment', 'Kolkata Flat Meter')" title="Edit">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDetailsModal('Kolkata Flat Meter', 'Mom', 'Electricity', 'CESC Limited', '₹1,420', 'Paid', 'Monthly', null, '83719002')" title="View Details">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-error-container/30 text-error rounded-lg transition-colors" onclick="openDeleteModal('Kolkata Flat Meter')" title="Delete">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Apple One Cloud + Music (Upcoming) -->
+<tr class="hover:bg-surface-container/60 transition-colors group" data-amount="365" data-category="subscription" data-person="Family" data-status="upcoming">
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-secondary border border-secondary/20">
+                      Family
+                    </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Apple One Family Bundle</div>
+<div class="text-body-sm font-body-sm text-outline">Apple ID: ghosh.vault@icloud</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-base text-secondary">subscriptions</span>
+<span>Subscription</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface">Apple Services</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right font-numeric-metric font-semibold text-on-surface">
+                    ₹365
+                  </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-secondary font-medium text-body-sm">Renews in 9 days</span>
+<span class="text-label-sm text-outline block">Oct 27, 2024</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-center">
+<span class="status-upcoming px-2.5 py-0.5 rounded-full text-label-sm font-label-sm">Upcoming</span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 hover:bg-tertiary-container/30 text-tertiary rounded-lg transition-colors" onclick="togglePaid(this)" title="Mark as Paid">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDrawer('Edit Payment', 'Apple One Family Bundle')" title="Edit">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" onclick="openDetailsModal('Apple One Family Bundle', 'Family', 'Subscription', 'Apple Services', '₹365', 'Upcoming', 'Monthly', null, null)" title="View Details">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-error-container/30 text-error rounded-lg transition-colors" onclick="openDeleteModal('Apple One Family Bundle')" title="Delete">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- 2. MOBILE STACKING CARDS VIEW (< 768px) -->
+<div class="md:hidden space-y-3" id="mobileCardsContainer">
+<!-- Mobile Card 1 -->
+<div class="glass-card p-4 space-y-3" data-amount="2450" data-category="recharge" data-person="Subhojit" data-status="overdue">
+<div class="flex items-start justify-between">
+<div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary mb-1.5">
+                  Subhojit
+                </span>
+<h4 class="font-headline-sm font-medium text-on-surface">Airtel Postpaid Family Plan</h4>
+<p class="text-body-sm text-outline">Airtel Telecom • 9845012345</p>
+</div>
+<span class="status-overdue px-2 py-0.5 rounded-full text-label-sm font-label-sm">Overdue</span>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-outline-variant/30">
+<div>
+<span class="text-label-sm text-outline block">AMOUNT</span>
+<span class="text-headline-sm font-numeric-metric font-semibold text-on-surface">₹2,450</span>
+</div>
+<div class="text-right">
+<span class="text-label-sm text-outline block">DUE DATE</span>
+<span class="text-body-sm font-medium text-error">Overdue 3 days</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+<button class="px-2.5 py-1 text-label-sm font-label-sm bg-tertiary/10 text-tertiary rounded-lg border border-tertiary/20" onclick="togglePaid(this)">Mark Paid</button>
+<button class="p-1.5 text-on-surface-variant bg-surface-container rounded-lg" onclick="openDrawer('Edit Payment', 'Airtel Postpaid Family Plan')"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-1.5 text-on-surface-variant bg-surface-container rounded-lg" onclick="openDetailsModal('Airtel Postpaid Family Plan', 'Subhojit', 'Recharge', 'Airtel Telecom', '₹2,450', 'Overdue', 'Monthly', '9845012345', null)"><span class="material-symbols-outlined text-base">visibility</span></button>
+<button class="p-1.5 text-error bg-error-container/20 rounded-lg" onclick="openDeleteModal('Airtel Postpaid Family Plan')"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</div>
+<!-- Mobile Card 2 -->
+<div class="glass-card p-4 space-y-3" data-amount="3890" data-category="electricity" data-person="Family" data-status="due">
+<div class="flex items-start justify-between">
+<div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-secondary mb-1.5">
+                  Family
+                </span>
+<h4 class="font-headline-sm font-medium text-on-surface">Main Residence Power Grid</h4>
+<p class="text-body-sm text-outline">BESCOM Karnataka • BES-99482-A</p>
+</div>
+<span class="status-due px-2 py-0.5 rounded-full text-label-sm font-label-sm">Due</span>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-outline-variant/30">
+<div>
+<span class="text-label-sm text-outline block">AMOUNT</span>
+<span class="text-headline-sm font-numeric-metric font-semibold text-on-surface">₹3,890</span>
+</div>
+<div class="text-right">
+<span class="text-label-sm text-outline block">DUE DATE</span>
+<span class="text-body-sm font-medium text-amber-400">Due in 2 days</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+<button class="px-2.5 py-1 text-label-sm font-label-sm bg-tertiary/10 text-tertiary rounded-lg border border-tertiary/20" onclick="togglePaid(this)">Mark Paid</button>
+<button class="p-1.5 text-on-surface-variant bg-surface-container rounded-lg" onclick="openDrawer('Edit Payment', 'Main Residence Power Grid')"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-1.5 text-on-surface-variant bg-surface-container rounded-lg" onclick="openDetailsModal('Main Residence Power Grid', 'Family', 'Electricity', 'BESCOM Karnataka', '₹3,890', 'Due Soon', 'Monthly', null, 'BES-99482-A')"><span class="material-symbols-outlined text-base">visibility</span></button>
+<button class="p-1.5 text-error bg-error-container/20 rounded-lg" onclick="openDeleteModal('Main Residence Power Grid')"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- BOTTOM NAV BAR FOR MOBILE (From Shared Components JSON Anchor: BottomNavBar) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-4 py-2 bg-surface-container-lowest border-t border-outline-variant shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span class="text-label-sm font-label-sm mt-0.5">Overview</span>
+</a>
+<!-- Active State: Commitments (Closest to Payments) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-3 py-1.5 font-bold" href="#">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="text-label-sm font-label-sm mt-0.5">Commitments</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-lg">insights</span>
+<span class="text-label-sm font-label-sm mt-0.5">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">Settings</span>
+</a>
+</nav>
+<!-- OVERLAY 1: PaymentFormDrawer (Slide-over drawer on right / bottom sheet on mobile) -->
+<div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity duration-300 opacity-0 pointer-events-none" id="drawerBackdrop" onclick="closeDrawer()"></div>
+<aside class="fixed right-0 top-0 bottom-0 w-full sm:w-[480px] bg-surface-container-low border-l border-outline-variant z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col justify-between shadow-2xl" id="paymentDrawer">
+<!-- Drawer Header -->
+<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface font-semibold" id="drawerHeading">Add New Payment</h3>
+<p class="text-body-sm font-body-sm text-outline">Configure recurring obligation or subscription</p>
+</div>
+<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" onclick="closeDrawer()">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<!-- Drawer Form Content Area -->
+<div class="p-6 overflow-y-auto flex-1 custom-scroll space-y-5">
+<!-- Category Selector with 3 pill buttons -->
+<div>
+<label class="text-label-md font-label-md text-outline block mb-2">PAYMENT CATEGORY</label>
+<div class="grid grid-cols-3 gap-2 bg-surface-container-lowest p-1 rounded-xl border border-outline-variant">
+<button class="category-toggle py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 bg-primary-container text-on-primary shadow-sm font-medium" id="catBtnRecharge" onclick="selectDrawerCategory('recharge')" type="button">
+<span class="material-symbols-outlined text-base">phone_iphone</span>
+<span>Recharge</span>
+</button>
+<button class="category-toggle py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-medium" id="catBtnElectricity" onclick="selectDrawerCategory('electricity')" type="button">
+<span class="material-symbols-outlined text-base">bolt</span>
+<span>Electricity</span>
+</button>
+<button class="category-toggle py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-medium" id="catBtnSubscription" onclick="selectDrawerCategory('subscription')" type="button">
+<span class="material-symbols-outlined text-base">subscriptions</span>
+<span>Subscription</span>
+</button>
+</div>
+</div>
+<!-- Common Fields: Person, Title, Amount -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1.5">Assigned Person</label>
+<select class="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary" id="formPerson">
+<option value="Subhojit">Subhojit</option>
+<option value="Mom">Mom</option>
+<option value="Family">Family</option>
+</select>
+</div>
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1.5">Payment Title</label>
+<input class="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary" id="formTitle" placeholder="e.g. Fiber Broadband" type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1.5">Amount (₹)</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline font-semibold">₹</span>
+<input class="w-full h-10 pl-7 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary" id="formAmount" placeholder="0.00" type="number"/>
+</div>
+</div>
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1.5">Frequency</label>
+<select class="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary" id="formFrequency">
+<option value="Monthly">Monthly</option>
+<option value="Quarterly">Quarterly</option>
+<option value="Annual">Annual</option>
+</select>
+</div>
+</div>
+<!-- DYNAMIC SECTION 1: RECHARGE SPECIFIC (Default Active) -->
+<div class="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/60 space-y-4" id="dynamicRechargeSection">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider font-semibold">Recharge Configuration</span>
+<!-- Recharge Type Toggle: Prepaid vs Postpaid -->
+<div class="inline-flex bg-surface-container p-0.5 rounded-lg border border-outline-variant/50">
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md bg-primary-container text-on-primary" id="typePrepaidBtn" onclick="setRechargeType('prepaid')" type="button">Prepaid</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant" id="typePostpaidBtn" onclick="setRechargeType('postpaid')" type="button">Postpaid</button>
+</div>
+</div>
+<div class="space-y-3">
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1">Mobile Number</label>
+<input class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary" placeholder="+91 98765 43210" type="tel"/>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1" id="rechargeDateLabel">Recharge Expiry Date</label>
+<input class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary" type="date"/>
+</div>
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1">Validity (Days)</label>
+<input class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary" placeholder="28 / 56 / 84" type="number"/>
+</div>
+</div>
+</div>
+</div>
+<!-- DYNAMIC SECTION 2: ELECTRICITY SPECIFIC -->
+<div class="hidden p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/60 space-y-4" id="dynamicElectricitySection">
+<span class="text-label-sm font-label-sm text-amber-400 uppercase tracking-wider font-semibold">Electricity Details</span>
+<div class="space-y-3">
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1">Electricity Board Provider</label>
+<select class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary">
+<option>BESCOM (Bangalore Electricity)</option>
+<option>Tata Power (Mumbai / Delhi)</option>
+<option>CESC Limited (West Bengal)</option>
+<option>Adani Electricity</option>
+<option>MSEB (Maharashtra)</option>
+</select>
+</div>
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1">
+              Consumer ID / Account Number 
+              <span class="text-label-sm text-outline-variant font-normal">(Optional) - Leave blank if not required</span>
+</label>
+<input class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary" placeholder="e.g. 100492819" type="text"/>
+</div>
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1">Bill Due Date</label>
+<input class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary" type="date"/>
+</div>
+</div>
+</div>
+<!-- DYNAMIC SECTION 3: SUBSCRIPTION SPECIFIC -->
+<div class="hidden p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/60 space-y-4" id="dynamicSubscriptionSection">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider font-semibold">Subscription Settings</span>
+<div class="space-y-3">
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1">Service Provider</label>
+<input class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary" placeholder="e.g. Netflix, Spotify, AWS, GitHub" type="text"/>
+</div>
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1">Next Renewal Date</label>
+<input class="w-full h-10 bg-surface border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary" type="date"/>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div>
+<span class="text-label-md font-label-md text-on-surface block">Auto-Renewal Active</span>
+<span class="text-body-sm text-outline block">Auto charged to linked card/UPI</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Notes -->
+<div>
+<label class="text-label-md font-label-md text-outline block mb-1.5">Household Notes</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-primary resize-none" placeholder="e.g. Shared split with sibling; check voucher discounts before paying" rows="2"></textarea>
+</div>
+</div>
+<!-- Drawer Footer Actions -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex items-center justify-end gap-3">
+<button class="px-4 py-2 border border-outline-variant hover:bg-surface-container text-on-surface rounded-xl font-label-md text-label-md transition-colors" onclick="closeDrawer()" type="button">
+        Cancel
+      </button>
+<button class="px-5 py-2 bg-gradient-to-r from-primary-container to-secondary-container text-on-primary rounded-xl font-label-lg text-label-lg shadow-lg shadow-primary-container/20 hover:opacity-95 active:scale-[0.98] transition-all" onclick="savePaymentAction()" type="button">
+        Save Payment
+      </button>
+</div>
+</aside>
+<!-- OVERLAY 2: PaymentDetailsModal -->
+<div class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200 opacity-0 pointer-events-none" id="detailsModalBackdrop">
+<div class="glass-card max-w-lg w-full p-6 space-y-5 transform scale-95 transition-transform duration-200 shadow-2xl border-outline-variant" id="detailsModalBox">
+<div class="flex items-start justify-between border-b border-outline-variant/40 pb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary" id="modalPersonBadge">Subhojit</span>
+<span class="status-overdue px-2 py-0.5 rounded-full text-label-sm font-label-sm" id="modalStatusBadge">Overdue</span>
+</div>
+<h3 class="text-headline-md font-headline-md font-semibold text-on-surface" id="modalTitle">Airtel Postpaid</h3>
+<p class="text-body-sm font-body-sm text-outline" id="modalProvider">Airtel Telecom</p>
+</div>
+<button class="p-1 text-outline hover:text-on-surface rounded-lg" onclick="closeDetailsModal()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Key Details Grid -->
+<div class="grid grid-cols-2 gap-4 py-2">
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/40">
+<span class="text-label-sm font-label-sm text-outline block">TOTAL AMOUNT</span>
+<span class="text-headline-sm font-numeric-metric font-semibold text-on-surface mt-0.5 block" id="modalAmount">₹2,450</span>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/40">
+<span class="text-label-sm font-label-sm text-outline block">FREQUENCY</span>
+<span class="text-body-md font-medium text-on-surface mt-1 block" id="modalFrequency">Monthly</span>
+</div>
+</div>
+<!-- Conditional Specifics -->
+<div class="space-y-2 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/40 text-body-sm">
+<div class="flex justify-between py-1 border-b border-outline-variant/20">
+<span class="text-outline">Category</span>
+<span class="text-on-surface font-medium" id="modalCategory">Recharge</span>
+</div>
+<div class="flex justify-between py-1 border-b border-outline-variant/20" id="modalMobileRow">
+<span class="text-outline">Mobile Number</span>
+<span class="text-on-surface font-mono" id="modalMobile">9845012345</span>
+</div>
+<div class="hidden flex justify-between py-1 border-b border-outline-variant/20" id="modalConsumerRow">
+<span class="text-outline">Consumer ID / Account</span>
+<span class="text-on-surface font-mono" id="modalConsumer">BES-99482-A</span>
+</div>
+<div class="flex justify-between py-1">
+<span class="text-outline">Next Review / Billing</span>
+<span class="text-on-surface">Within Current Cycle</span>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="flex items-center justify-end gap-3 pt-2">
+<button class="px-4 py-2 border border-outline-variant hover:bg-surface-container text-on-surface rounded-xl text-label-md font-label-md transition-colors" onclick="closeDetailsModal()">
+          Dismiss
+        </button>
+<button class="px-4 py-2 bg-primary-container text-on-primary rounded-xl text-label-md font-label-md transition-all" onclick="closeDetailsModal(); openDrawer('Edit Payment');">
+          Edit Payment
+        </button>
+</div>
+</div>
+</div>
+<!-- OVERLAY 3: DeleteConfirmModal -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200 opacity-0 pointer-events-none" id="deleteModalBackdrop">
+<div class="glass-card max-w-md w-full p-6 space-y-4 transform scale-95 transition-transform duration-200 shadow-2xl border-error-container/40" id="deleteModalBox" style="box-shadow: 0 0 24px -6px rgba(239, 68, 68, 0.25);">
+<div class="w-12 h-12 rounded-xl bg-error-container/30 border border-error/30 flex items-center justify-center text-error mb-2">
+<span class="material-symbols-outlined text-2xl">delete_forever</span>
+</div>
+<div>
+<h3 class="text-headline-md font-headline-md font-semibold text-on-surface">Are you sure you want to delete this payment?</h3>
+<p class="text-body-sm font-body-sm text-outline mt-2 leading-relaxed">
+          This action cannot be undone and will remove all associated reminder notifications, scheduled cycles, and archived billing records for <span class="font-semibold text-on-surface" id="deleteItemName">Airtel Postpaid</span>.
+        </p>
+</div>
+<div class="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/30">
+<button class="px-4 py-2 border border-outline-variant hover:bg-surface-container text-on-surface rounded-xl text-label-md font-label-md transition-colors" onclick="closeDeleteModal()">
+          Cancel
+        </button>
+<button class="px-4 py-2 bg-error text-on-error hover:bg-opacity-90 rounded-xl text-label-md font-label-md font-semibold transition-all" onclick="confirmDeleteAction()">
+          Delete Payment
+        </button>
+</div>
+</div>
+</div>
+<!-- INTERACTIVE SCRIPTS FOR MODALS, DRAWERS & DYNAMIC FORM FIELDS -->
+<script>
+    // 1. Drawer Logic
+    function openDrawer(title = 'Add New Payment', itemTitle = '') {
+      document.getElementById('drawerHeading').textContent = title;
+      if (itemTitle) {
+        document.getElementById('formTitle').value = itemTitle;
+      }
+      const backdrop = document.getElementById('drawerBackdrop');
+      const drawer = document.getElementById('paymentDrawer');
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      backdrop.classList.add('opacity-100');
+      drawer.classList.remove('translate-x-full');
+    }
+
+    function closeDrawer() {
+      const backdrop = document.getElementById('drawerBackdrop');
+      const drawer = document.getElementById('paymentDrawer');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      backdrop.classList.remove('opacity-100');
+      drawer.classList.add('translate-x-full');
+    }
+
+    // Category Selector Inside Drawer
+    function selectDrawerCategory(cat) {
+      // Reset button styles
+      ['recharge', 'electricity', 'subscription'].forEach(c => {
+        const btn = document.getElementById('catBtn' + c.charAt(0).toUpperCase() + c.slice(1));
+        btn.className = "category-toggle py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-medium";
+      });
+
+      // Highlight active button
+      const activeBtn = document.getElementById('catBtn' + cat.charAt(0).toUpperCase() + cat.slice(1));
+      activeBtn.className = "category-toggle py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 bg-primary-container text-on-primary shadow-sm font-medium";
+
+      // Toggle dynamic sections strictly according to instructions:
+      // Recharge: Mobile No, Recharge Type toggle, Validity (NO Consumer ID)
+      // Electricity: Provider, Consumer ID optional (NO Mobile No or Validity)
+      // Subscription: Provider, Renewal Date, Auto-renewal toggle (NO recharge or electricity fields)
+      document.getElementById('dynamicRechargeSection').classList.add('hidden');
+      document.getElementById('dynamicElectricitySection').classList.add('hidden');
+      document.getElementById('dynamicSubscriptionSection').classList.add('hidden');
+
+      if (cat === 'recharge') {
+        document.getElementById('dynamicRechargeSection').classList.remove('hidden');
+      } else if (cat === 'electricity') {
+        document.getElementById('dynamicElectricitySection').classList.remove('hidden');
+      } else if (cat === 'subscription') {
+        document.getElementById('dynamicSubscriptionSection').classList.remove('hidden');
+      }
+    }
+
+    // Toggle Prepaid vs Postpaid
+    function setRechargeType(type) {
+      const prepBtn = document.getElementById('typePrepaidBtn');
+      const postBtn = document.getElementById('typePostpaidBtn');
+      const dateLabel = document.getElementById('rechargeDateLabel');
+
+      if (type === 'prepaid') {
+        prepBtn.className = "px-2.5 py-1 text-label-sm font-label-sm rounded-md bg-primary-container text-on-primary";
+        postBtn.className = "px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant";
+        dateLabel.textContent = "Recharge Expiry Date";
+      } else {
+        postBtn.className = "px-2.5 py-1 text-label-sm font-label-sm rounded-md bg-primary-container text-on-primary";
+        prepBtn.className = "px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant";
+        dateLabel.textContent = "Bill Due Date";
+      }
+    }
+
+    function savePaymentAction() {
+      // Micro interaction toast confirmation
+      closeDrawer();
+    }
+
+    // 2. Details Modal Logic
+    function openDetailsModal(title, person, category, provider, amount, status, frequency, mobile, consumerId) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalProvider').textContent = provider;
+      document.getElementById('modalPersonBadge').textContent = person;
+      document.getElementById('modalAmount').textContent = amount;
+      document.getElementById('modalCategory').textContent = category;
+      document.getElementById('modalFrequency').textContent = frequency;
+
+      // Status badge style
+      const statusBadge = document.getElementById('modalStatusBadge');
+      statusBadge.textContent = status;
+      statusBadge.className = "px-2 py-0.5 rounded-full text-label-sm font-label-sm " + 
+        (status.toLowerCase().includes('overdue') ? 'status-overdue' : 
+         status.toLowerCase().includes('due') ? 'status-due' : 
+         status.toLowerCase().includes('paid') ? 'status-paid' : 'status-upcoming');
+
+      // Conditional fields display
+      const mobileRow = document.getElementById('modalMobileRow');
+      const consumerRow = document.getElementById('modalConsumerRow');
+
+      if (mobile) {
+        mobileRow.classList.remove('hidden');
+        document.getElementById('modalMobile').textContent = mobile;
+      } else {
+        mobileRow.classList.add('hidden');
+      }
+
+      if (consumerId) {
+        consumerRow.classList.remove('hidden');
+        document.getElementById('modalConsumer').textContent = consumerId;
+      } else {
+        consumerRow.classList.add('hidden');
+      }
+
+      const backdrop = document.getElementById('detailsModalBackdrop');
+      const box = document.getElementById('detailsModalBox');
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-95');
+      box.classList.add('scale-100');
+    }
+
+    function closeDetailsModal() {
+      const backdrop = document.getElementById('detailsModalBackdrop');
+      const box = document.getElementById('detailsModalBox');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-100');
+      box.classList.add('scale-95');
+    }
+
+    // 3. Delete Modal Logic
+    let activeDeleteRow = null;
+    function openDeleteModal(title) {
+      document.getElementById('deleteItemName').textContent = title;
+      const backdrop = document.getElementById('deleteModalBackdrop');
+      const box = document.getElementById('deleteModalBox');
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-95');
+      box.classList.add('scale-100');
+    }
+
+    function closeDeleteModal() {
+      const backdrop = document.getElementById('deleteModalBackdrop');
+      const box = document.getElementById('deleteModalBox');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-100');
+      box.classList.add('scale-95');
+    }
+
+    function confirmDeleteAction() {
+      closeDeleteModal();
+    }
+
+    // 4. Quick Action: Mark As Paid Toggle
+    function togglePaid(button) {
+      const row = button.closest('tr') || button.closest('[data-status]');
+      const currentStatus = row.getAttribute('data-status');
+      if (currentStatus === 'paid') {
+        row.setAttribute('data-status', 'due');
+      } else {
+        row.setAttribute('data-status', 'paid');
+      }
+      applyFilters();
+    }
+
+    // 5. Filter & Search Logic
+    let currentCategory = 'all';
+    let currentStatus = 'all';
+
+    function filterCategory(cat, btn) {
+      currentCategory = cat;
+      document.querySelectorAll('.category-btn').forEach(b => {
+        b.className = "category-btn px-3 py-1.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all";
+      });
+      btn.className = "category-btn px-3 py-1.5 rounded-full text-label-sm font-label-sm bg-primary text-on-primary font-medium transition-all shadow-sm";
+      applyFilters();
+    }
+
+    function filterStatus(stat, btn) {
+      currentStatus = stat;
+      document.querySelectorAll('.status-btn').forEach(b => {
+        b.classList.remove('ring-2', 'ring-primary');
+      });
+      btn.classList.add('ring-2', 'ring-primary');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const person = document.getElementById('personFilter').value;
+      const search = (document.getElementById('globalSearch')?.value || '').toLowerCase();
+      
+      const rows = document.querySelectorAll('#tableBody tr');
+      rows.forEach(r => {
+        const catMatch = currentCategory === 'all' || r.getAttribute('data-category') === currentCategory;
+        const statusMatch = currentStatus === 'all' || r.getAttribute('data-status') === currentStatus;
+        const personMatch = person === 'all' || r.getAttribute('data-person') === person;
+        const textMatch = !search || r.innerText.toLowerCase().includes(search);
+
+        if (catMatch && statusMatch && personMatch && textMatch) {
+          r.style.display = '';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+
+      // Mobile cards filtering
+      const cards = document.querySelectorAll('#mobileCardsContainer > div');
+      cards.forEach(c => {
+        const catMatch = currentCategory === 'all' || c.getAttribute('data-category') === currentCategory;
+        const statusMatch = currentStatus === 'all' || c.getAttribute('data-status') === currentStatus;
+        const personMatch = person === 'all' || c.getAttribute('data-person') === person;
+        const textMatch = !search || c.innerText.toLowerCase().includes(search);
+
+        if (catMatch && statusMatch && personMatch && textMatch) {
+          c.style.display = '';
+        } else {
+          c.style.display = 'none';
+        }
+      });
+    }
+
+    // Realtime Global Search
+    document.getElementById('globalSearch')?.addEventListener('input', applyFilters);
+
+    function applySorting() {
+      const sortVal = document.getElementById('sortFilter').value;
+      const tbody = document.getElementById('tableBody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+
+      if (sortVal === 'amount-high') {
+        rows.sort((a, b) => {
+          return parseInt(b.getAttribute('data-amount')) - parseInt(a.getAttribute('data-amount'));
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      } else if (sortVal === 'due-soon') {
+        // Simple re-order prioritising overdue & due
+        rows.sort((a, b) => {
+          const score = s => s === 'overdue' ? 1 : s === 'due' ? 2 : s === 'upcoming' ? 3 : 4;
+          return score(a.getAttribute('data-status')) - score(b.getAttribute('data-status'));
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      }
+    }
+  </script>
+</body></html>
