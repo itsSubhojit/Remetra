@@ -23,7 +23,7 @@ export const DashboardPage = () => {
   // Table filter state: 'all' | 'pending' | 'paid'
   const [tableFilter, setTableFilter] = useState("all");
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Subhojit";
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Vault Member";
 
   // Fetch payments on mount
   const fetchPayments = async () => {
@@ -88,6 +88,7 @@ export const DashboardPage = () => {
   // Client-Side Calculations
   const metrics = useMemo(() => {
     let totalPaid = 0;
+    let currentMonthPaid = 0;
     let pendingObligations = 0;
     let pendingCount = 0;
     let overdueCount = 0;
@@ -96,6 +97,9 @@ export const DashboardPage = () => {
     let earliestReminder = null;
 
     const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
     const in7Days = new Date();
     in7Days.setDate(now.getDate() + 7);
 
@@ -109,13 +113,22 @@ export const DashboardPage = () => {
 
       if (p.status === "Paid") {
         totalPaid += amt;
+        if (p.paidDate) {
+          const pd = new Date(p.paidDate);
+          if (pd.getMonth() === currentMonth && pd.getFullYear() === currentYear) {
+            currentMonthPaid += amt;
+          }
+        } else {
+          currentMonthPaid += amt;
+        }
+
         if (categoryTotals[p.category] !== undefined) {
           categoryTotals[p.category] += amt;
         } else {
           categoryTotals[p.category] = amt;
         }
 
-        const person = p.personName || "Family";
+        const person = p.personName || "Household";
         personTotals[person] = (personTotals[person] || 0) + amt;
       } else if (p.status === "Overdue") {
         overdueCount += 1;
@@ -153,6 +166,7 @@ export const DashboardPage = () => {
 
     return {
       totalPaid,
+      currentMonthPaid,
       pendingObligations,
       pendingCount,
       overdueCount,
@@ -245,7 +259,7 @@ export const DashboardPage = () => {
       />
 
       {/* Main Content Canvas */}
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0 pb-24 md:pb-12 bg-[#0B0F17]">
+      <div className="flex-1 md:ml-64 flex flex-col min-w-0 pb-28 md:pb-12 bg-[#0B0F17]">
         {/* Top Navigation Header */}
         <header className="flex justify-between items-center w-full px-4 md:px-8 py-4 sticky top-0 z-30 bg-[#0B0F17]/85 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
           <div className="flex items-center gap-4">
@@ -284,7 +298,7 @@ export const DashboardPage = () => {
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
-              <span>+ Add Payment</span>
+              <span>Add Payment</span>
             </button>
           </div>
         </header>
@@ -628,7 +642,6 @@ export const DashboardPage = () => {
               </div>
 
               <div className="pt-3 border-t border-[#1E293B] flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
-                <span>Verified status === 'Paid'</span>
                 <span className="text-primary font-semibold">Total: ₹{metrics.totalPaid.toLocaleString("en-IN")}</span>
               </div>
             </div>
@@ -701,101 +714,184 @@ export const DashboardPage = () => {
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">add</span>
-                  <span>+ Add Payment</span>
+                  <span>Add Payment</span>
                 </button>
               </div>
             ) : (
-              /* Table Responsive Canvas */
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-[#1E293B] text-label-sm font-label-sm uppercase text-on-surface-variant/80 tracking-wider bg-[#101722]/50">
-                      <th className="py-3 px-4 font-semibold">Person</th>
-                      <th className="py-3 px-4 font-semibold">Title</th>
-                      <th className="py-3 px-4 font-semibold">Category</th>
-                      <th className="py-3 px-4 font-semibold">Provider</th>
-                      <th className="py-3 px-4 font-semibold text-right">Amount</th>
-                      <th className="py-3 px-4 font-semibold">Due Date</th>
-                      <th className="py-3 px-4 font-semibold">Status</th>
-                      <th className="py-3 px-4 font-semibold text-right">Quick Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[rgba(30,41,59,0.5)] text-body-md font-body-md">
-                    {filteredPayments.slice(0, 5).map((payment) => {
-                      const initial = (payment.personName || "F")[0].toUpperCase();
-                      const isOverdue = payment.status === "Overdue";
+              <>
+                {/* 1. Desktop Table Canvas (Visible ≥ 768px) */}
+                <div className="hidden md:block overflow-x-auto custom-scroll">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#1E293B] text-label-sm font-label-sm uppercase text-on-surface-variant/80 tracking-wider bg-[#101722]/50">
+                        <th className="py-3 px-4 font-semibold">Person</th>
+                        <th className="py-3 px-4 font-semibold">Title</th>
+                        <th className="py-3 px-4 font-semibold">Category</th>
+                        <th className="py-3 px-4 font-semibold">Provider</th>
+                        <th className="py-3 px-4 font-semibold text-right">Amount</th>
+                        <th className="py-3 px-4 font-semibold">Due Date</th>
+                        <th className="py-3 px-4 font-semibold">Status</th>
+                        <th className="py-3 px-4 font-semibold text-right">Quick Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[rgba(30,41,59,0.5)] text-body-md font-body-md">
+                      {filteredPayments.slice(0, 5).map((payment) => {
+                        const initial = (payment.personName || "F")[0].toUpperCase();
+                        const isOverdue = payment.status === "Overdue";
 
-                      return (
-                        <tr
-                          key={payment._id}
-                          className={`hover:bg-slate-800/30 transition-colors group ${isOverdue ? "bg-red-950/10" : ""}`}
-                        >
-                          <td className="py-3.5 px-4 font-medium text-on-surface">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-label-sm font-label-sm flex items-center justify-center font-bold">
-                                {initial}
-                              </span>
-                              <span>{payment.personName}</span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4 font-medium text-on-surface">{payment.title}</td>
-                          <td className="py-3.5 px-4 text-on-surface-variant">
-                            <span className="inline-flex items-center gap-1.5 text-body-sm font-body-sm">
-                              <span className="material-symbols-outlined text-[16px] text-sky-400">
-                                {getCategoryIcon(payment.category)}
-                              </span>
-                              {payment.category}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-on-surface-variant">{payment.provider}</td>
-                          <td className={`py-3.5 px-4 text-right font-semibold font-mono ${isOverdue ? "text-error" : "text-on-surface"}`}>
-                            ₹{Number(payment.amount).toLocaleString("en-IN")}
-                          </td>
-                          <td className="py-3.5 px-4 text-body-sm font-body-sm text-on-surface-variant">
-                            {formatDaysRemaining(payment.dueDate, payment.status)}
-                          </td>
-                          <td className="py-3.5 px-4">{getStatusBadge(payment.status)}</td>
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="inline-flex items-center gap-1.5">
-                              {payment.status !== "Paid" ? (
-                                <button
-                                  onClick={() => handleMarkAsPaid(payment._id)}
-                                  className="px-2.5 py-1 rounded bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] border border-[#10B981]/30 text-label-sm font-label-sm font-semibold transition-colors"
-                                  title="Mark this payment as paid"
-                                >
-                                  Mark Paid
-                                </button>
-                              ) : (
-                                <span className="px-2.5 py-1 text-label-sm font-label-sm text-tertiary font-medium flex items-center gap-1">
-                                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                                  Settled
+                        return (
+                          <tr
+                            key={payment._id}
+                            className={`hover:bg-slate-800/30 transition-colors group ${isOverdue ? "bg-red-950/10" : ""}`}
+                          >
+                            <td className="py-3.5 px-4 font-medium text-on-surface">
+                              <div className="flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-label-sm font-label-sm flex items-center justify-center font-bold">
+                                  {initial}
                                 </span>
-                              )}
-                              <button
-                                onClick={() => {
-                                  setEditingPayment(payment);
-                                  setIsDrawerOpen(true);
-                                }}
-                                className="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors"
-                                title="Edit"
-                              >
-                                <span className="material-symbols-outlined text-[18px]">edit</span>
-                              </button>
-                              <button
-                                onClick={() => setDeletingPayment(payment)}
-                                className="p-1 rounded text-on-surface-variant hover:text-error transition-colors"
-                                title="Delete"
-                              >
-                                <span className="material-symbols-outlined text-[18px]">delete</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                                <span>{payment.personName}</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 font-medium text-on-surface">{payment.title}</td>
+                            <td className="py-3.5 px-4 text-on-surface-variant">
+                              <span className="inline-flex items-center gap-1.5 text-body-sm font-body-sm">
+                                <span className="material-symbols-outlined text-[16px] text-sky-400">
+                                  {getCategoryIcon(payment.category)}
+                                </span>
+                                {payment.category}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-on-surface-variant">{payment.provider}</td>
+                            <td className={`py-3.5 px-4 text-right font-semibold font-mono ${isOverdue ? "text-error" : "text-on-surface"}`}>
+                              ₹{Number(payment.amount).toLocaleString("en-IN")}
+                            </td>
+                            <td className="py-3.5 px-4 text-body-sm font-body-sm text-on-surface-variant">
+                              {formatDaysRemaining(payment.dueDate, payment.status)}
+                            </td>
+                            <td className="py-3.5 px-4">{getStatusBadge(payment.status)}</td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="inline-flex items-center gap-1.5">
+                                {payment.status !== "Paid" ? (
+                                  <button
+                                    onClick={() => handleMarkAsPaid(payment._id)}
+                                    className="px-2.5 py-1 rounded bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] border border-[#10B981]/30 text-label-sm font-label-sm font-semibold transition-colors"
+                                    title="Mark this payment as paid"
+                                  >
+                                    Mark Paid
+                                  </button>
+                                ) : (
+                                  <span className="px-2.5 py-1 text-label-sm font-label-sm text-tertiary font-medium flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                    Settled
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setEditingPayment(payment);
+                                    setIsDrawerOpen(true);
+                                  }}
+                                  className="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors"
+                                  title="Edit"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">edit</span>
+                                </button>
+                                <button
+                                  onClick={() => setDetailsPayment(payment)}
+                                  className="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors"
+                                  title="View Details"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                </button>
+                                <button
+                                  onClick={() => setDeletingPayment(payment)}
+                                  className="p-1 rounded text-on-surface-variant hover:text-error transition-colors"
+                                  title="Delete"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 2. Mobile Cards Canvas (Visible < 768px) */}
+                <div className="md:hidden p-3 sm:p-4 space-y-3">
+                  {filteredPayments.slice(0, 5).map((payment) => {
+                    const isOverdue = payment.status === "Overdue";
+                    return (
+                      <div key={payment._id} className="p-4 rounded-xl bg-[#101722]/80 border border-[#1E293B] space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary mb-1">
+                              {payment.personName}
+                            </span>
+                            <h4 className="font-headline-sm font-semibold text-on-surface">{payment.title}</h4>
+                            <p className="text-body-sm text-on-surface-variant">
+                              {payment.provider} • {payment.category}
+                            </p>
+                          </div>
+                          {getStatusBadge(payment.status)}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-[#1E293B]">
+                          <div>
+                            <span className="text-[11px] uppercase tracking-wider text-outline block">Amount</span>
+                            <span className={`text-headline-sm font-mono font-bold ${isOverdue ? "text-error" : "text-on-surface"}`}>
+                              ₹{Number(payment.amount).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[11px] uppercase tracking-wider text-outline block">Due Date</span>
+                            <span className={`text-body-sm font-medium ${isOverdue ? "text-error" : "text-on-surface"}`}>
+                              {formatDaysRemaining(payment.dueDate, payment.status)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1E293B]/60">
+                          {payment.status !== "Paid" && (
+                            <button
+                              onClick={() => handleMarkAsPaid(payment._id)}
+                              className="px-2.5 py-1 text-label-sm font-label-sm bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 rounded-lg"
+                              type="button"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              setEditingPayment(payment);
+                              setIsDrawerOpen(true);
+                            }}
+                            className="p-1.5 text-on-surface-variant bg-surface-container rounded-lg"
+                            type="button"
+                          >
+                            <span className="material-symbols-outlined text-base">edit</span>
+                          </button>
+                          <button
+                            onClick={() => setDetailsPayment(payment)}
+                            className="p-1.5 text-on-surface-variant bg-surface-container rounded-lg"
+                            type="button"
+                          >
+                            <span className="material-symbols-outlined text-base">visibility</span>
+                          </button>
+                          <button
+                            onClick={() => setDeletingPayment(payment)}
+                            className="p-1.5 text-error bg-error-container/20 rounded-lg"
+                            type="button"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
 
             <div className="px-5 py-3 border-t border-[#1E293B] bg-[#101722]/60 flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">

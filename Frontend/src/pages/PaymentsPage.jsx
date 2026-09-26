@@ -122,9 +122,9 @@ export const PaymentsPage = () => {
     };
   }, [payments]);
 
-  // Unique person list for filter dropdown
+  // Unique person list for filter dropdown derived strictly from real payment records
   const uniquePersons = useMemo(() => {
-    const persons = new Set(["Subhojit", "Mom", "Family"]);
+    const persons = new Set();
     payments.forEach((p) => {
       if (p.personName) persons.add(p.personName);
     });
@@ -241,9 +241,9 @@ export const PaymentsPage = () => {
       />
 
       {/* Main Content Canvas */}
-      <main className="flex-1 md:ml-64 pb-24 md:pb-12 min-h-screen bg-surface-container-lowest">
+      <main className="flex-1 md:ml-64 pb-28 md:pb-12 min-h-screen bg-surface-container-lowest">
         {/* TOP BAR NAV */}
-        <header className="flex justify-between items-center w-full px-6 py-3 sticky top-0 z-20 bg-surface border-b border-outline-variant shadow-sm backdrop-blur-md">
+        <header className="flex justify-between items-center w-full px-4 sm:px-6 py-2.5 sm:py-3 sticky top-0 z-20 bg-surface border-b border-outline-variant shadow-sm backdrop-blur-md">
           {/* Search Input on Left */}
           <div className="flex items-center gap-4 flex-1 max-w-md">
             <div className="relative w-full">
@@ -288,7 +288,7 @@ export const PaymentsPage = () => {
         </header>
 
         {/* PAGE MAIN BODY */}
-        <div className="px-4 md:px-8 py-6 max-w-7xl mx-auto space-y-6">
+        <div className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
           {/* Executive Header Area */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -301,19 +301,6 @@ export const PaymentsPage = () => {
               <p className="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
                 Manage all your recurring payments, subscriptions, and household utilities.
               </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setEditingPayment(null);
-                  setIsDrawerOpen(true);
-                }}
-                className="sm:flex hidden items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-xl font-label-md text-label-md hover:bg-opacity-90 shadow-md shadow-primary-container/25 transition-all"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-lg">add</span>
-                <span>+ Add Payment</span>
-              </button>
             </div>
           </div>
 
@@ -520,7 +507,7 @@ export const PaymentsPage = () => {
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
-                <span>+ Add Payment</span>
+                <span>Add Payment</span>
               </button>
             </div>
           ) : (
@@ -725,13 +712,6 @@ export const PaymentsPage = () => {
             </>
           )}
 
-          {/* Table Footer Status */}
-          <div className="px-5 py-3 border border-outline-variant/30 rounded-xl bg-[#101722]/60 flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
-            <span>
-              Showing {filteredAndSortedPayments.length} of {payments.length} active scheduled commitments (client-side filtered)
-            </span>
-            <span className="text-outline">Backend CRUD Synchronized</span>
-          </div>
         </div>
       </main>
 

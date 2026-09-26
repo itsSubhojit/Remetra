@@ -19,20 +19,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if demo session was active
-    if (localStorage.getItem("remetra_demo_active") === "true") {
-      const demoUser = {
-        uid: "demo-household-vault-uid",
-        email: "subhojit@remetra.app",
-        displayName: "Subhojit Roy",
-        getIdToken: async () => "demo-firebase-id-token",
-      };
-      setUser(demoUser);
-      setToken("demo-firebase-id-token");
-      setLoading(false);
-      return;
-    }
-
     if (!auth) {
       setLoading(false);
       return;
@@ -48,10 +34,8 @@ export const AuthProvider = ({ children }) => {
           console.error("Error retrieving Firebase ID token:", err);
         }
       } else {
-        if (localStorage.getItem("remetra_demo_active") !== "true") {
-          setUser(null);
-          setToken(null);
-        }
+        setUser(null);
+        setToken(null);
       }
       setLoading(false);
     });
@@ -88,111 +72,60 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginDemoUser = (customEmail = null, customName = null) => {
-    const demoUser = {
-      uid: "demo-household-vault-uid",
-      email: customEmail || "subhojit@remetra.app",
-      displayName: customName || (customEmail ? customEmail.split("@")[0] : "Subhojit Roy"),
-      getIdToken: async () => "demo-firebase-id-token",
-    };
-    setUser(demoUser);
-    setToken("demo-firebase-id-token");
-    localStorage.setItem("remetra_demo_active", "true");
-    return demoUser;
-  };
-
   const login = async (email, password) => {
     if (!auth) {
-      return loginDemoUser(email);
+      throw new Error("Firebase Authentication is not initialized. Please verify your Firebase configuration.");
     }
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      localStorage.removeItem("remetra_demo_active");
-      const freshToken = await result.user.getIdToken();
-      setToken(freshToken);
-      return result.user;
-    } catch (err) {
-      if (
-        err.code === "auth/invalid-api-key" ||
-        err.code === "auth/api-key-not-valid" ||
-        err.code === "auth/network-request-failed" ||
-        err.code === "auth/configuration-not-found"
-      ) {
-        console.warn("Invalid/Placeholder Firebase API key detected. Falling back to Demo Vault.");
-        return loginDemoUser(email);
-      }
-      throw err;
-    }
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    const freshToken = await result.user.getIdToken();
+    setToken(freshToken);
+    return result.user;
   };
 
   const register = async (name, email, password) => {
     if (!auth) {
-      return loginDemoUser(email, name);
+      throw new Error("Firebase Authentication is not initialized. Please verify your Firebase configuration.");
     }
-    try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      localStorage.removeItem("remetra_demo_active");
-      if (name) {
-        await updateProfile(result.user, { displayName: name });
-      }
-      const freshToken = await result.user.getIdToken();
-      setToken(freshToken);
-      return result.user;
-    } catch (err) {
-      if (
-        err.code === "auth/invalid-api-key" ||
-        err.code === "auth/api-key-not-valid" ||
-        err.code === "auth/network-request-failed" ||
-        err.code === "auth/configuration-not-found"
-      ) {
-        console.warn("Invalid/Placeholder Firebase API key detected. Falling back to Demo Vault.");
-        return loginDemoUser(email, name);
-      }
-      throw err;
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    if (name) {
+      await updateProfile(result.user, { displayName: name });
     }
+    const freshToken = await result.user.getIdToken();
+    setToken(freshToken);
+    return result.user;
   };
 
   const loginWithGoogle = async () => {
     if (!auth) {
-      return loginDemoUser();
+      throw new Error("Firebase Authentication is not initialized. Please verify your Firebase configuration.");
     }
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      localStorage.removeItem("remetra_demo_active");
-      const freshToken = await result.user.getIdToken();
-      setToken(freshToken);
-      return result.user;
-    } catch (err) {
-      if (
-        err.code === "auth/invalid-api-key" ||
-        err.code === "auth/api-key-not-valid" ||
-        err.code === "auth/popup-closed-by-user" ||
-        err.code === "auth/cancelled-popup-request" ||
-        err.code === "auth/configuration-not-found"
-      ) {
-        console.warn("Google popup fallback to Demo Vault:", err.code);
-        return loginDemoUser();
-      }
-      throw err;
-    }
+    const result = await signInWithPopup(auth, googleProvider);
+    const freshToken = await result.user.getIdToken();
+    setToken(freshToken);
+    return result.user;
   };
 
   const logout = async () => {
-    localStorage.removeItem("remetra_demo_active");
     if (auth) {
-      try {
-        await signOut(auth);
-      } catch (e) {
-        // ignore
-      }
+      await signOut(auth);
     }
     setUser(null);
     setToken(null);
   };
 
   const resetPassword = async (email) => {
-    if (!auth) throw new Error("Firebase Auth is not initialized. Please configure VITE_FIREBASE_API_KEY.");
+    if (!auth) {
+      throw new Error("Firebase Authentication is not initialized. Please verify your Firebase configuration.");
+    }
     return await sendPasswordResetEmail(auth, email);
+  };
+
+  const updateUserProfile = async (displayName) => {
+    if (!auth || !auth.currentUser) {
+      throw new Error("No authenticated user found.");
+    }
+    await updateProfile(auth.currentUser, { displayName });
+    setUser({ ...auth.currentUser, displayName });
   };
 
   return (
@@ -204,9 +137,9 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         loginWithGoogle,
-        loginDemoUser,
         logout,
         resetPassword,
+        updateUserProfile,
         getToken,
         isAuthenticated: !!user,
       }}

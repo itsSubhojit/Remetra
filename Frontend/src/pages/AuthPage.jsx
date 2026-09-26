@@ -6,7 +6,7 @@ export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login"); // 'login' | 'register' | 'forgot'
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, register, loginWithGoogle, loginDemoUser, resetPassword } = useAuth();
+  const { login, register, loginWithGoogle, resetPassword } = useAuth();
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState(location.state?.email || "");
@@ -28,6 +28,31 @@ export const AuthPage = () => {
   // Status & error handling
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const getFirebaseErrorMessage = (err) => {
+    const code = err.code;
+    switch (code) {
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        return "Invalid email or password. Please verify your credentials.";
+      case "auth/email-already-in-use":
+        return "An account with this email already exists. Please log in.";
+      case "auth/weak-password":
+        return "Password is too weak. Please use at least 6 characters.";
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+      case "auth/popup-closed-by-user":
+      case "auth/cancelled-popup-request":
+        return "Google sign-in was cancelled.";
+      case "auth/network-request-failed":
+        return "Network connection issue. Please check your internet connection.";
+      case "auth/too-many-requests":
+        return "Too many unsuccessful attempts. Please try again later.";
+      default:
+        return err.message || "Authentication failed. Please try again.";
+    }
+  };
 
   const handlePasswordStrength = (val) => {
     setRegPassword(val);
@@ -57,7 +82,7 @@ export const AuthPage = () => {
       const destination = location.state?.from?.pathname || "/dashboard";
       navigate(destination, { replace: true });
     } catch (err) {
-      setError(err.message || "Failed to sign in. Please verify your credentials.");
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -83,7 +108,7 @@ export const AuthPage = () => {
       await register(regName, regEmail, regPassword);
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.");
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -97,7 +122,7 @@ export const AuthPage = () => {
       const destination = location.state?.from?.pathname || "/dashboard";
       navigate(destination, { replace: true });
     } catch (err) {
-      setError(err.message || "Google Sign-In failed.");
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -311,21 +336,7 @@ export const AuthPage = () => {
             {activeTab === "login" && (
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-headline-sm font-headline-sm font-semibold text-on-surface">Welcome back</h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLoginEmail("subhojit@remetra.app");
-                        setLoginPassword("remetra123");
-                      }}
-                      className="text-label-sm font-label-sm text-primary hover:underline flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 transition hover:bg-primary/20"
-                      title="Auto-fill demo credentials"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">bolt</span>
-                      Auto-fill Demo
-                    </button>
-                  </div>
+                  <h3 className="text-headline-sm font-headline-sm font-semibold text-on-surface">Welcome back</h3>
                   <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">
                     Access your household vault and scheduled debits.
                   </p>
@@ -447,19 +458,6 @@ export const AuthPage = () => {
                     />
                   </svg>
                   <span>Continue with Google</span>
-                </button>
-
-                {/* Explore Demo Vault */}
-                <button
-                  onClick={() => {
-                    loginDemoUser();
-                    navigate("/dashboard");
-                  }}
-                  className="w-full mt-2.5 h-10 rounded-lg bg-surface-container-high border border-outline-variant/60 hover:border-primary/40 text-primary font-label-md font-semibold flex items-center justify-center gap-2 transition active:scale-[0.98]"
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                  <span>Explore Demo Household Vault</span>
                 </button>
 
                 <p className="text-center text-body-sm font-body-sm text-on-surface-variant pt-2">

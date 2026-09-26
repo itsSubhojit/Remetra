@@ -29,8 +29,8 @@ export const PaymentDetailsModal = ({ isOpen, onClose, onEdit, payment }) => {
   }) : null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-card max-w-lg w-full p-6 space-y-5 shadow-2xl border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="glass-card max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scroll p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl border border-outline-variant animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-start justify-between border-b border-outline-variant/40 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
@@ -74,6 +74,39 @@ export const PaymentDetailsModal = ({ isOpen, onClose, onEdit, payment }) => {
             <span className="text-outline">Category</span>
             <span className="text-on-surface font-medium">{payment.category}</span>
           </div>
+
+          {/* Recharge Category Details */}
+          {payment.category === "Recharge" && (
+            <>
+              {payment.mobileNumber && (
+                <div className="flex justify-between py-1 border-b border-outline-variant/20">
+                  <span className="text-outline">Mobile Number</span>
+                  <span className="text-on-surface font-mono">{payment.mobileNumber}</span>
+                </div>
+              )}
+              {payment.rechargeType && (
+                <div className="flex justify-between py-1 border-b border-outline-variant/20">
+                  <span className="text-outline">Recharge Type</span>
+                  <span className="text-on-surface font-medium">{payment.rechargeType}</span>
+                </div>
+              )}
+              {payment.validityDays && (
+                <div className="flex justify-between py-1 border-b border-outline-variant/20">
+                  <span className="text-outline">Plan Validity</span>
+                  <span className="text-on-surface font-medium">{payment.validityDays} Days</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Electricity Category Details */}
+          {payment.category === "Electricity" && payment.consumerId && (
+            <div className="flex justify-between py-1 border-b border-outline-variant/20">
+              <span className="text-outline">Consumer ID</span>
+              <span className="text-on-surface font-mono">{payment.consumerId}</span>
+            </div>
+          )}
+
           <div className="flex justify-between py-1 border-b border-outline-variant/20">
             <span className="text-outline">Next Due Date</span>
             <span className="text-on-surface font-mono">{formattedDate}</span>

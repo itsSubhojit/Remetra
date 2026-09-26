@@ -6,6 +6,8 @@ import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { SpendInsightsPage } from "./pages/SpendInsightsPage";
 
 export default function App() {
   return (
@@ -35,6 +37,25 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/spend-insights"
+            element={
+              <ProtectedRoute>
+                <SpendInsightsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/insights" element={<Navigate to="/spend-insights" replace />} />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/profile" element={<Navigate to="/settings?tab=profile" replace />} />
+          <Route path="/account" element={<Navigate to="/settings?tab=profile" replace />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -8,8 +8,7 @@ const PROVIDER_SUGGESTIONS = {
 
 export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = null }) => {
   const [category, setCategory] = useState("Recharge");
-  const [personName, setPersonName] = useState("Subhojit");
-  const [customPerson, setCustomPerson] = useState("");
+  const [personName, setPersonName] = useState("");
   const [title, setTitle] = useState("");
   const [provider, setProvider] = useState("");
   const [customProvider, setCustomProvider] = useState(false);
@@ -19,20 +18,20 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
   const [status, setStatus] = useState("Upcoming");
   const [paidDate, setPaidDate] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Category-specific fields matching real Payment model
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [rechargeType, setRechargeType] = useState("Prepaid");
+  const [validityDays, setValidityDays] = useState("");
+  const [consumerId, setConsumerId] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (editingPayment) {
       setCategory(editingPayment.category || "Recharge");
-      const person = editingPayment.personName || "Subhojit";
-      if (["Subhojit", "Mom", "Family"].includes(person)) {
-        setPersonName(person);
-        setCustomPerson("");
-      } else {
-        setPersonName("Custom");
-        setCustomPerson(person);
-      }
+      setPersonName(editingPayment.personName || "");
       setTitle(editingPayment.title || "");
       setProvider(editingPayment.provider || "");
       setAmount(editingPayment.amount || "");
@@ -50,11 +49,16 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
         setPaidDate("");
       }
       setNotes(editingPayment.notes || "");
+
+      // Populate category-specific fields
+      setMobileNumber(editingPayment.mobileNumber || "");
+      setRechargeType(editingPayment.rechargeType || "Prepaid");
+      setValidityDays(editingPayment.validityDays ? String(editingPayment.validityDays) : "");
+      setConsumerId(editingPayment.consumerId || "");
     } else {
       // Default clean state for new payment
       setCategory("Recharge");
-      setPersonName("Subhojit");
-      setCustomPerson("");
+      setPersonName("");
       setTitle("");
       setProvider(PROVIDER_SUGGESTIONS["Recharge"][0]);
       setCustomProvider(false);
@@ -66,6 +70,12 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
       setStatus("Upcoming");
       setPaidDate("");
       setNotes("");
+
+      // Category-specific defaults
+      setMobileNumber("");
+      setRechargeType("Prepaid");
+      setValidityDays("");
+      setConsumerId("");
     }
     setError("");
   }, [editingPayment, isOpen]);
@@ -83,8 +93,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
     e.preventDefault();
     setError("");
 
-    const finalPerson = personName === "Custom" ? customPerson.trim() : personName;
-    if (!finalPerson) {
+    if (!personName.trim()) {
       setError("Please specify the assigned person name.");
       return;
     }
@@ -105,8 +114,9 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
       return;
     }
 
+    // Common fields supported by Backend schema
     const payload = {
-      personName: finalPerson,
+      personName: personName.trim(),
       title: title.trim(),
       category,
       provider: provider.trim(),
@@ -114,8 +124,29 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
       dueDate: new Date(dueDate).toISOString(),
       frequency,
       status,
-      notes: notes.trim() || undefined,
     };
+
+    if (notes.trim()) {
+      payload.notes = notes.trim();
+    }
+
+    // Attach category-specific fields without inventing non-existent ones
+    if (category === "Recharge") {
+      if (mobileNumber.trim()) {
+        payload.mobileNumber = mobileNumber.trim();
+      }
+      if (rechargeType) {
+        payload.rechargeType = rechargeType;
+      }
+      if (validityDays && Number(validityDays) > 0) {
+        payload.validityDays = Number(validityDays);
+      }
+    } else if (category === "Electricity") {
+      // consumerId is OPTIONAL
+      if (consumerId.trim()) {
+        payload.consumerId = consumerId.trim();
+      }
+    }
 
     if (status === "Paid") {
       payload.paidDate = paidDate ? new Date(paidDate).toISOString() : new Date().toISOString();
@@ -142,12 +173,12 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
         onClick={onClose}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <aside className="w-screen max-w-md bg-surface-container-low border-l border-outline-variant/60 shadow-2xl flex flex-col justify-between overflow-y-auto custom-scroll">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
+        <aside className="w-full sm:w-screen sm:max-w-md bg-surface-container-low border-l border-outline-variant/60 shadow-2xl flex flex-col justify-between overflow-y-auto custom-scroll">
           {/* Header */}
-          <div className="px-6 py-5 border-b border-outline-variant/40 flex items-center justify-between bg-surface-container-lowest/80 backdrop-blur-md sticky top-0 z-10">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-outline-variant/40 flex items-center justify-between bg-surface-container-lowest/80 backdrop-blur-md sticky top-0 z-10">
             <div>
-              <h2 className="text-headline-md font-headline-md font-bold text-on-surface">
+              <h2 className="text-headline-sm sm:text-headline-md font-headline-md font-bold text-on-surface">
                 {editingPayment ? "Edit Payment" : "Add New Payment"}
               </h2>
               <p className="text-body-sm text-outline mt-0.5">
@@ -164,7 +195,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
           </div>
 
           {/* Form Content */}
-          <form id="paymentForm" onSubmit={handleSubmit} className="p-6 space-y-5 flex-1">
+          <form id="paymentForm" onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1">
             {error && (
               <div className="p-3 rounded-lg bg-error-container/20 border border-error/40 text-error text-body-sm flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px]">error</span>
@@ -175,44 +206,44 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
             {/* Category Selector Tabs */}
             <div>
               <label className="text-label-md font-label-md text-outline block mb-2">Category</label>
-              <div className="grid grid-cols-3 gap-2 bg-surface-container-lowest p-1.5 rounded-xl border border-outline-variant/50">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 bg-surface-container-lowest p-1.5 rounded-xl border border-outline-variant/50">
                 <button
                   type="button"
                   onClick={() => handleCategoryChange("Recharge")}
-                  className={`py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 font-medium ${
+                  className={`py-2 px-1.5 sm:px-3 rounded-lg text-label-sm sm:text-label-md font-label-md transition-all flex items-center justify-center gap-1 sm:gap-1.5 font-medium ${
                     category === "Recharge"
                       ? "bg-primary-container text-on-primary shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">signal_cellular_alt</span>
-                  <span>Recharge</span>
+                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">signal_cellular_alt</span>
+                  <span className="truncate">Recharge</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleCategoryChange("Electricity")}
-                  className={`py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 font-medium ${
+                  className={`py-2 px-1.5 sm:px-3 rounded-lg text-label-sm sm:text-label-md font-label-md transition-all flex items-center justify-center gap-1 sm:gap-1.5 font-medium ${
                     category === "Electricity"
                       ? "bg-primary-container text-on-primary shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">bolt</span>
-                  <span>Electric</span>
+                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">bolt</span>
+                  <span className="truncate">Electric</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleCategoryChange("Subscription")}
-                  className={`py-2 px-3 rounded-lg text-label-md font-label-md transition-all flex items-center justify-center gap-1.5 font-medium ${
+                  className={`py-2 px-1.5 sm:px-3 rounded-lg text-label-sm sm:text-label-md font-label-md transition-all flex items-center justify-center gap-1 sm:gap-1.5 font-medium ${
                     category === "Subscription"
                       ? "bg-primary-container text-on-primary shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">subscriptions</span>
-                  <span>Sub</span>
+                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">subscriptions</span>
+                  <span className="truncate">Sub</span>
                 </button>
               </div>
             </div>
@@ -221,26 +252,14 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-label-md font-label-md text-outline block mb-1.5">Assigned Person</label>
-                <select
+                <input
+                  type="text"
                   value={personName}
                   onChange={(e) => setPersonName(e.target.value)}
-                  className="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary"
-                >
-                  <option value="Subhojit">Subhojit</option>
-                  <option value="Mom">Mom</option>
-                  <option value="Family">Family</option>
-                  <option value="Custom">+ Custom Person...</option>
-                </select>
-                {personName === "Custom" && (
-                  <input
-                    type="text"
-                    value={customPerson}
-                    onChange={(e) => setCustomPerson(e.target.value)}
-                    placeholder="Enter name"
-                    className="w-full h-9 mt-2 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-sm text-on-surface focus:outline-none focus:border-primary"
-                    required
-                  />
-                )}
+                  placeholder="e.g. Self, Alex, Household, Office..."
+                  className="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                  required
+                />
               </div>
 
               <div>
@@ -299,6 +318,93 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
                 </select>
               )}
             </div>
+
+            {/* Category-Specific Section */}
+            {category === "Recharge" && (
+              <div className="p-3.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/40 space-y-3.5">
+                <div className="text-label-sm font-label-sm uppercase tracking-wider text-outline flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-sky-400">phonelink_setup</span>
+                  <span>Recharge Details</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-label-sm font-label-sm text-on-surface-variant block mb-1">Mobile Number</label>
+                    <input
+                      type="tel"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value)}
+                      placeholder="e.g. 9876543210"
+                      className="w-full h-9 bg-surface-container-low border border-outline-variant rounded-lg px-3 text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-label-sm font-label-sm text-on-surface-variant block mb-1">Recharge Type</label>
+                    <div className="flex rounded-lg bg-surface-container-low p-0.5 border border-outline-variant">
+                      <button
+                        type="button"
+                        onClick={() => setRechargeType("Prepaid")}
+                        className={`flex-1 py-1.5 text-label-sm font-semibold rounded-md transition ${
+                          rechargeType === "Prepaid"
+                            ? "bg-primary-container text-on-primary shadow-sm"
+                            : "text-on-surface-variant hover:text-on-surface"
+                        }`}
+                      >
+                        Prepaid
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRechargeType("Postpaid")}
+                        className={`flex-1 py-1.5 text-label-sm font-semibold rounded-md transition ${
+                          rechargeType === "Postpaid"
+                            ? "bg-primary-container text-on-primary shadow-sm"
+                            : "text-on-surface-variant hover:text-on-surface"
+                        }`}
+                      >
+                        Postpaid
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-label-sm font-label-sm text-on-surface-variant block mb-1">Validity (Days)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={validityDays}
+                    onChange={(e) => setValidityDays(e.target.value)}
+                    placeholder="e.g. 28, 56, 84, 365"
+                    className="w-full h-9 bg-surface-container-low border border-outline-variant rounded-lg px-3 text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+            )}
+
+            {category === "Electricity" && (
+              <div className="p-3.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/40 space-y-2">
+                <div className="text-label-sm font-label-sm uppercase tracking-wider text-outline flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-amber-400">electric_meter</span>
+                  <span>Electricity Details</span>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-label-sm font-label-sm text-on-surface-variant">Consumer ID</label>
+                    <span className="text-label-sm text-outline">Optional</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={consumerId}
+                    onChange={(e) => setConsumerId(e.target.value)}
+                    placeholder="e.g. 1029384756 (optional)"
+                    className="w-full h-9 bg-surface-container-low border border-outline-variant rounded-lg px-3 text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                  />
+                  <p className="text-label-sm text-outline mt-1">Consumer / Meter ID as shown on electricity bill.</p>
+                </div>
+              </div>
+            )}
 
             {/* Amount & Frequency */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -380,7 +486,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Split with sibling; verify voucher discount before renewal"
+                placeholder="e.g. Split with family; verify meter discount before renewal"
                 rows={2}
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary resize-none"
               />
@@ -388,7 +494,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
           </form>
 
           {/* Footer Actions */}
-          <div className="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex items-center justify-end gap-3 sticky bottom-0">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-outline-variant bg-surface-container-lowest flex items-center justify-end gap-3 sticky bottom-0">
             <button
               type="button"
               onClick={onClose}

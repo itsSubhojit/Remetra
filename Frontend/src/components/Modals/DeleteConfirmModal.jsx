@@ -4,9 +4,9 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, paymentTitle, d
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
       <div
-        className="glass-card max-w-md w-full p-6 space-y-4 shadow-2xl border border-error-container/40 animate-in fade-in zoom-in-95 duration-150"
+        className="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto custom-scroll p-4 sm:p-6 space-y-4 shadow-2xl border border-error-container/40 animate-in fade-in zoom-in-95 duration-150"
         style={{ boxShadow: "0 0 24px -6px rgba(239, 68, 68, 0.25)" }}
       >
         <div className="w-12 h-12 rounded-xl bg-error-container/30 border border-error/30 flex items-center justify-center text-error mb-2">
