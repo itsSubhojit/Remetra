@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Remetra — Household Vault &amp; Payment Overview</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "secondary-container": "#00a6e0",
+          "error-container": "#93000a",
+          "on-error": "#690005",
+          "tertiary-container": "#00885d",
+          "on-surface": "#dfe2ee",
+          "surface-container": "#1c2028",
+          "on-background": "#dfe2ee",
+          "on-primary-container": "#0d0096",
+          "tertiary": "#4edea3",
+          "surface-container-high": "#262a33",
+          "on-tertiary-container": "#000703",
+          "outline": "#908fa0",
+          "inverse-on-surface": "#2c3039",
+          "surface-container-low": "#181c24",
+          "surface-tint": "#c0c1ff",
+          "secondary-fixed": "#c4e7ff",
+          "on-secondary-container": "#00374d",
+          "surface-bright": "#353942",
+          "secondary": "#7bd0ff",
+          "surface-dim": "#0f131c",
+          "surface-container-highest": "#31353e",
+          "surface-variant": "#31353e",
+          "on-tertiary": "#003824",
+          "inverse-surface": "#dfe2ee",
+          "on-primary": "#1000a9",
+          "on-tertiary-fixed": "#002113",
+          "primary": "#c0c1ff",
+          "outline-variant": "#464554",
+          "on-tertiary-fixed-variant": "#005236",
+          "on-secondary-fixed": "#001e2c",
+          "on-primary-fixed-variant": "#2f2ebe",
+          "primary-container": "#8083ff",
+          "surface-container-lowest": "#0a0e16",
+          "background": "#0f131c",
+          "tertiary-fixed-dim": "#4edea3",
+          "secondary-fixed-dim": "#7bd0ff",
+          "on-secondary-fixed-variant": "#004c69",
+          "on-error-container": "#ffdad6",
+          "on-primary-fixed": "#07006c",
+          "on-secondary": "#00354a",
+          "primary-fixed": "#e1e0ff",
+          "surface": "#0f131c",
+          "tertiary-fixed": "#6ffbbe",
+          "on-surface-variant": "#c7c4d7",
+          "primary-fixed-dim": "#c0c1ff",
+          "error": "#ffb4ab",
+          "inverse-primary": "#494bd6"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter-sm": "1rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "margin": "2rem",
+          "gutter": "1.5rem",
+          "space-xl": "2.5rem",
+          "space-md": "1rem",
+          "space-lg": "1.5rem",
+          "margin-sm": "1rem"
+        },
+        "fontFamily": {
+          "body-md": ["Inter"],
+          "display-mobile": ["Outfit"],
+          "label-lg": ["Inter"],
+          "label-md": ["Inter"],
+          "headline-md": ["Outfit"],
+          "body-lg": ["Inter"],
+          "body-sm": ["Inter"],
+          "headline-lg": ["Outfit"],
+          "numeric-metric": ["Outfit"],
+          "label-sm": ["Inter"],
+          "display": ["Outfit"],
+          "headline-sm": ["Outfit"]
+        },
+        "fontSize": {
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+          "display-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+          "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+          "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+          "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+          "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+          "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+          "numeric-metric": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+          "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+          "display": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+          "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "500" }]
+        }
+      },
+    },
+  }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-glass {
+      background: rgba(21, 29, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .luminous-red-glow {
+      box-shadow: 0 0 24px -6px rgba(239, 68, 68, 0.25);
+    }
+    .luminous-sky-glow {
+      box-shadow: 0 0 20px -6px rgba(56, 189, 248, 0.2);
+    }
+    .donut-segment {
+      transition: stroke-dashoffset 0.8s ease-in-out, stroke 0.3s ease;
+    }
+    .bar-grow {
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="bg-[#0B0F17] text-on-surface antialiased min-h-screen flex selection:bg-primary-container selection:text-white">
+<!-- Desktop Persistent Left Sidebar (JSON Blueprint Compliant) -->
+<aside class="hidden md:flex flex-col justify-between h-screen w-64 p-4 z-50 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant/40">
+<div class="flex flex-col gap-6">
+<!-- Brand Anchor -->
+<div class="flex items-center gap-3 px-2 py-2">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#6366F1] to-[#38BDF8] flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
+<span class="material-symbols-outlined text-[24px]">account_balance_wallet</span>
+</div>
+<div>
+<span class="text-headline-md font-headline-md font-bold text-on-surface tracking-tight block">Remetra</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant tracking-wider uppercase">Household Vault</span>
+</div>
+</div>
+<!-- Quick Action CTA -->
+<button class="w-full flex items-center justify-center gap-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white py-2.5 px-4 rounded-xl text-label-lg font-label-lg transition-all duration-150 shadow-[0_4px_14px_rgba(99,102,241,0.35)] active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Entry</span>
+</button>
+<!-- Primary Navigation Links -->
+<nav class="flex flex-col space-y-1">
+<a class="flex items-center gap-3 text-primary font-bold bg-surface-container-low rounded-lg px-3 py-2.5 border-l-2 border-primary text-label-lg font-label-lg transition-all duration-150" href="#dashboard">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg px-3 py-2.5 text-label-lg font-label-lg transition-all duration-150" href="#commitments">
+<span class="material-symbols-outlined">calendar_today</span>
+<span>Commitments</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg px-3 py-2.5 text-label-lg font-label-lg transition-all duration-150" href="#analytics">
+<span class="material-symbols-outlined">insights</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg px-3 py-2.5 text-label-lg font-label-lg transition-all duration-150" href="#obligations">
+<span class="material-symbols-outlined">receipt_long</span>
+<span>Obligations</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg px-3 py-2.5 text-label-lg font-label-lg transition-all duration-150" href="#archive">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Archive</span>
+</a>
+</nav>
+</div>
+<!-- User Profile Block & Footer Actions -->
+<div class="pt-4 border-t border-outline-variant/30 flex flex-col gap-3">
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-low border border-[#1E293B]">
+<div class="flex items-center gap-3 overflow-hidden">
+<div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-label-md flex-shrink-0 ring-2 ring-indigo-400/20">
+            SR
+          </div>
+<div class="truncate">
+<p class="text-label-md font-label-md font-semibold text-on-surface truncate">Subhojit Roy</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant truncate">subhojit@example.com</p>
+</div>
+</div>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-colors" title="Logout">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+</button>
+</div>
+<div class="flex items-center justify-between px-1 text-on-surface-variant text-label-sm font-label-sm">
+<a class="flex items-center gap-1.5 hover:text-on-surface py-1" href="#settings">
+<span class="material-symbols-outlined text-[16px]">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-1.5 hover:text-on-surface py-1" href="#support">
+<span class="material-symbols-outlined text-[16px]">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Mobile Bottom Navigation Bar (Blueprint Compliant) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface-container-lowest border-t border-outline-variant/40 shadow-lg">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-3 py-1.5" href="#overview">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-label-sm font-label-sm font-semibold mt-0.5">Overview</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-3 py-1.5 transition-colors" href="#commitments">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span class="text-label-sm font-label-sm mt-0.5">Commitments</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-3 py-1.5 transition-colors" href="#analytics">
+<span class="material-symbols-outlined text-[20px]">insights</span>
+<span class="text-label-sm font-label-sm mt-0.5">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface px-3 py-1.5 transition-colors" href="#settings">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="text-label-sm font-label-sm mt-0.5">Settings</span>
+</a>
+</nav>
+<!-- Main Content Canvas -->
+<div class="flex-1 md:ml-64 flex flex-col min-w-0 pb-24 md:pb-12 bg-[#0B0F17]">
+<!-- Top Navigation Header (Docked Full Width) -->
+<header class="flex justify-between items-center w-full px-4 md:px-8 py-4 sticky top-0 z-40 bg-[#0B0F17]/85 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="md:hidden flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-[#6366F1] flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+</div>
+<span class="text-headline-sm font-headline-sm font-extrabold text-on-surface tracking-tight">Remetra</span>
+</div>
+<div>
+<h1 class="text-headline-sm md:text-headline-md font-headline-md font-bold text-on-surface tracking-tight">
+            Good morning, Subhojit
+          </h1>
+<p class="text-body-sm font-body-sm text-on-surface-variant hidden sm:block">
+            Here's your payment overview.
+          </p>
+</div>
+</div>
+<!-- Action & Global Elements -->
+<div class="flex items-center gap-3">
+<!-- Live Alert Toggle/State Trigger for Review -->
+<button class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#1E293B] bg-[#151D2A] text-on-surface-variant hover:text-on-surface text-label-md font-label-md transition-colors" id="stateToggleBtn" title="Switch to zero records preview">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span id="toggleText">Toggle Empty State</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors relative">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4444] ring-2 ring-[#0B0F17]"></span>
+</button>
+<button class="flex items-center gap-2 bg-gradient-to-r from-[#6366F1] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white px-4 py-2 rounded-lg text-label-lg font-label-lg shadow-[0_4px_14px_rgba(99,102,241,0.35)] transition-all duration-150 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>+ Add Payment</span>
+</button>
+</div>
+</header>
+<!-- Content Workspace Container -->
+<main class="max-w-[1440px] w-full mx-auto px-4 md:px-8 py-6 space-y-6">
+<!-- KPI METRIC CARDS (4-Column Bento Architecture) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+<!-- Metric 1: Total Paid Spend -->
+<div class="bg-[#151D2A] border border-[#1E293B] rounded-xl p-5 relative overflow-hidden transition-all duration-200 hover:border-indigo-500/30">
+<div class="flex items-start justify-between">
+<span class="text-label-md font-label-md text-on-surface-variant font-medium">Total Paid Spend</span>
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(16,185,129,0.12)] text-[#10B981] border border-[rgba(16,185,129,0.25)] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+              Paid only
+            </span>
+</div>
+<div class="mt-4">
+<h2 class="text-numeric-metric font-numeric-metric text-on-surface font-semibold tracking-tight">₹8,450</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant/80 mt-1">Current month actual spending</p>
+</div>
+<!-- Micro subtle sparkline decoration -->
+<div class="mt-3 flex items-center gap-2 text-label-sm font-label-sm text-[#10B981]">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+12% vs previous cycle</span>
+</div>
+</div>
+<!-- Metric 2: Pending Obligations -->
+<div class="bg-[#151D2A] border border-[#1E293B] rounded-xl p-5 relative overflow-hidden transition-all duration-200 hover:border-sky-500/30 luminous-sky-glow">
+<div class="flex items-start justify-between">
+<span class="text-label-md font-label-md text-on-surface-variant font-medium">Pending Obligations</span>
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(56,189,248,0.12)] text-[#38BDF8] border border-[rgba(56,189,248,0.25)] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#38BDF8]"></span>
+              Upcoming
+            </span>
+</div>
+<div class="mt-4">
+<h2 class="text-numeric-metric font-numeric-metric text-on-surface font-semibold tracking-tight">₹4,120</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant/80 mt-1">Not spent yet — upcoming commitments</p>
+</div>
+<div class="mt-3 flex items-center gap-2 text-label-sm font-label-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>3 obligations remaining</span>
+</div>
+</div>
+<!-- Metric 3: Overdue Action Required -->
+<div class="bg-[#151D2A] border border-red-500/40 rounded-xl p-5 relative overflow-hidden transition-all duration-200 luminous-red-glow">
+<div class="flex items-start justify-between">
+<span class="text-label-md font-label-md text-error font-medium">Overdue</span>
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(239,68,68,0.12)] text-[#EF4444] border border-[rgba(239,68,68,0.25)] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse"></span>
+              Action required
+            </span>
+</div>
+<div class="mt-4">
+<h2 class="text-numeric-metric font-numeric-metric text-[#EF4444] font-semibold tracking-tight">1 payment (₹719)</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant/90 mt-1">Airtel Postpaid 2 days overdue</p>
+</div>
+<div class="mt-3 flex items-center gap-2 text-label-sm font-label-sm text-[#EF4444]">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>Immediate clearing advised</span>
+</div>
+</div>
+<!-- Metric 4: Upcoming Reminders -->
+<div class="bg-[#151D2A] border border-[#1E293B] rounded-xl p-5 relative overflow-hidden transition-all duration-200 hover:border-amber-500/30">
+<div class="flex items-start justify-between">
+<span class="text-label-md font-label-md text-on-surface-variant font-medium">Upcoming Reminders</span>
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(245,158,11,0.12)] text-[#F59E0B] border border-[rgba(245,158,11,0.25)] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#F59E0B]"></span>
+              Due soon
+            </span>
+</div>
+<div class="mt-4">
+<h2 class="text-numeric-metric font-numeric-metric text-on-surface font-semibold tracking-tight">3 payments</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant/80 mt-1">Due in next 7 days</p>
+</div>
+<div class="mt-3 flex items-center gap-2 text-label-sm font-label-sm text-[#F59E0B]">
+<span class="material-symbols-outlined text-[14px]">event_upcoming</span>
+<span>Earliest: Tomorrow (₹2,450)</span>
+</div>
+</div>
+</section>
+<!-- ALERT SECTION: Urgent Attention Cards -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[#F59E0B] text-[20px]">notification_important</span>
+            Priority Attention
+          </h3>
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Household Schedule</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+<!-- Overdue Alert -->
+<div class="p-4 rounded-xl bg-[#151D2A] border border-red-500/40 relative overflow-hidden flex flex-col justify-between group">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center text-[#EF4444]">
+<span class="material-symbols-outlined text-[20px]">cell_wifi</span>
+</div>
+<div>
+<h4 class="text-label-lg font-label-lg font-semibold text-on-surface">Airtel Postpaid</h4>
+<p class="text-body-sm font-body-sm text-[#EF4444] font-medium">₹719 was due on Oct 24 (2 days ago)</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-[#1E293B]">
+<button class="flex-1 bg-[#EF4444] hover:bg-red-600 text-white py-1.5 px-3 rounded-lg text-label-md font-label-md font-semibold transition-colors">
+                Pay Now
+              </button>
+<button class="px-3 py-1.5 rounded-lg border border-[#1E293B] hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors">
+                Mark Paid
+              </button>
+</div>
+</div>
+<!-- Due Tomorrow Alert -->
+<div class="p-4 rounded-xl bg-[#151D2A] border border-amber-500/40 relative overflow-hidden flex flex-col justify-between group">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center text-[#F59E0B]">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<div>
+<h4 class="text-label-lg font-label-lg font-semibold text-on-surface">Tata Power Electricity</h4>
+<p class="text-body-sm font-body-sm text-[#F59E0B] font-medium">₹2,450 due Oct 27 (Tomorrow)</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-[#1E293B]">
+<button class="flex-1 bg-[#F59E0B] hover:bg-amber-600 text-black py-1.5 px-3 rounded-lg text-label-md font-label-md font-semibold transition-colors">
+                Pay Direct
+              </button>
+<button class="px-3 py-1.5 rounded-lg border border-[#1E293B] hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors">
+                Mark Paid
+              </button>
+</div>
+</div>
+<!-- Due in 3 days -->
+<div class="p-4 rounded-xl bg-[#151D2A] border border-[#1E293B] relative overflow-hidden flex flex-col justify-between group">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-sky-500/15 flex items-center justify-center text-[#38BDF8]">
+<span class="material-symbols-outlined text-[20px]">subscriptions</span>
+</div>
+<div>
+<h4 class="text-label-lg font-label-lg font-semibold text-on-surface">Netflix Premium 4K</h4>
+<p class="text-body-sm font-body-sm text-on-surface-variant">₹649 renewal Oct 29 (in 3 days)</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-3 border-t border-[#1E293B]">
+<span class="text-label-sm font-label-sm text-[#38BDF8] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">autorenew</span>
+                Auto-debit active
+              </span>
+<button class="px-3 py-1 rounded-lg border border-[#1E293B] hover:bg-surface-container text-on-surface-variant hover:text-on-surface text-label-md font-label-md transition-colors">
+                Details
+              </button>
+</div>
+</div>
+</div>
+</section>
+<!-- SPENDING ANALYTICS SECTION (Two side-by-side glass cards) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+<!-- Category Spending Donut Chart (7 cols) -->
+<div class="lg:col-span-7 bg-[#151D2A] border border-[#1E293B] rounded-xl p-5 md:p-6 flex flex-col justify-between">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1E293B] pb-4">
+<div>
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Category Spending Distribution</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Categorical split of settled commitments</p>
+</div>
+<span class="self-start sm:self-auto text-label-sm font-label-sm px-2.5 py-1 rounded-md bg-surface-container-high text-primary border border-outline-variant/30">
+              October 2024
+            </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center my-6">
+<!-- Custom Clean SVG Donut Chart -->
+<div class="sm:col-span-5 flex flex-col items-center justify-center relative">
+<svg class="w-44 h-44 transform -rotate-90" viewbox="0 0 120 120">
+<!-- Background track -->
+<circle cx="60" cy="60" fill="none" r="48" stroke="#1E293B" stroke-width="14"></circle>
+<!-- Electricity: 45% of circumference 301.59 = 135.7 -->
+<circle class="donut-segment" cx="60" cy="60" fill="none" r="48" stroke="#6366F1" stroke-dasharray="301.59" stroke-dashoffset="165.8" stroke-linecap="round" stroke-width="14"></circle>
+<!-- Recharge: 35% = 105.5 -->
+<circle class="donut-segment" cx="60" cy="60" fill="none" r="48" stroke="#38BDF8" stroke-dasharray="301.59" stroke-dashoffset="196.0" stroke-linecap="round" stroke-width="14" transform="rotate(162 60 60)"></circle>
+<!-- Subscription: 20% = 60.3 -->
+<circle class="donut-segment" cx="60" cy="60" fill="none" r="48" stroke="#10B981" stroke-dasharray="301.59" stroke-dashoffset="241.2" stroke-linecap="round" stroke-width="14" transform="rotate(288 60 60)"></circle>
+</svg>
+<!-- Donut Center Value -->
+<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase">Settled</span>
+<span class="text-headline-sm font-headline-sm font-bold text-on-surface">₹8,450</span>
+</div>
+</div>
+<!-- Legend & Categorical breakdown -->
+<div class="sm:col-span-7 space-y-3.5">
+<!-- Electricity -->
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-[#6366F1]"></span>
+<div>
+<p class="text-label-md font-label-md font-semibold text-on-surface">Electricity</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Apartment &amp; Utilities</p>
+</div>
+</div>
+<div class="text-right">
+<span class="text-label-md font-label-md font-bold text-on-surface">45%</span>
+<p class="text-label-sm font-label-sm text-on-surface-variant">₹3,800</p>
+</div>
+</div>
+<!-- Recharge -->
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-[#38BDF8]"></span>
+<div>
+<p class="text-label-md font-label-md font-semibold text-on-surface">Recharge</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Fiber &amp; Postpaid</p>
+</div>
+</div>
+<div class="text-right">
+<span class="text-label-md font-label-md font-bold text-on-surface">35%</span>
+<p class="text-label-sm font-label-sm text-on-surface-variant">₹2,960</p>
+</div>
+</div>
+<!-- Subscription -->
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-[#10B981]"></span>
+<div>
+<p class="text-label-md font-label-md font-semibold text-on-surface">Subscription</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Cloud &amp; Entertainment</p>
+</div>
+</div>
+<div class="text-right">
+<span class="text-label-md font-label-md font-bold text-on-surface">20%</span>
+<p class="text-label-sm font-label-sm text-on-surface-variant">₹1,690</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Explicit Calculation Protocol Note -->
+<div class="pt-3 border-t border-[#1E293B] flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">info</span>
+<span>Calculated strictly from Paid payments. Excludes pending obligations.</span>
+</div>
+</div>
+<!-- Person Spending Bar Chart (5 cols) -->
+<div class="lg:col-span-5 bg-[#151D2A] border border-[#1E293B] rounded-xl p-5 md:p-6 flex flex-col justify-between">
+<div class="border-b border-[#1E293B] pb-4">
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Spending by Family Member</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Verified disbursement per individual</p>
+</div>
+<div class="my-6 space-y-5">
+<!-- Subhojit -->
+<div>
+<div class="flex justify-between items-center mb-1.5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#6366F1]"></span>
+<span class="text-label-md font-label-md font-medium text-on-surface">Subhojit</span>
+</div>
+<span class="text-label-md font-label-md font-bold text-on-surface">₹4,200</span>
+</div>
+<div class="w-full h-3 rounded-full bg-[#1E293B] overflow-hidden">
+<div class="bar-grow h-full bg-gradient-to-r from-[#6366F1] to-[#8083ff] rounded-full" style="width: 50%;"></div>
+</div>
+</div>
+<!-- Mom -->
+<div>
+<div class="flex justify-between items-center mb-1.5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#38BDF8]"></span>
+<span class="text-label-md font-label-md font-medium text-on-surface">Mom</span>
+</div>
+<span class="text-label-md font-label-md font-bold text-on-surface">₹2,100</span>
+</div>
+<div class="w-full h-3 rounded-full bg-[#1E293B] overflow-hidden">
+<div class="bar-grow h-full bg-gradient-to-r from-[#38BDF8] to-[#7bd0ff] rounded-full" style="width: 25%;"></div>
+</div>
+</div>
+<!-- Family -->
+<div>
+<div class="flex justify-between items-center mb-1.5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#10B981]"></span>
+<span class="text-label-md font-label-md font-medium text-on-surface">Family</span>
+</div>
+<span class="text-label-md font-label-md font-bold text-on-surface">₹2,150</span>
+</div>
+<div class="w-full h-3 rounded-full bg-[#1E293B] overflow-hidden">
+<div class="bar-grow h-full bg-gradient-to-r from-[#10B981] to-[#4edea3] rounded-full" style="width: 25.5%;"></div>
+</div>
+</div>
+</div>
+<div class="pt-3 border-t border-[#1E293B] flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span>Verified status === 'Paid'</span>
+<span class="text-primary font-semibold">Total: ₹8,450</span>
+</div>
+</div>
+</section>
+<!-- RECENT PAYMENTS TABLE SECTION -->
+<section class="bg-[#151D2A] border border-[#1E293B] rounded-xl overflow-hidden shadow-sm">
+<!-- Table Control Toolbar -->
+<div class="p-5 border-b border-[#1E293B] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Recent Obligations &amp; Payments</h3>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-on-surface-variant border border-outline-variant/30" id="recordCountBadge">
+              4 active entries
+            </span>
+</div>
+<div class="flex flex-wrap items-center gap-2.5">
+<!-- Filter Pills -->
+<div class="flex items-center bg-[#0B0F17] rounded-lg p-1 border border-[#1E293B]">
+<button class="px-3 py-1 text-label-sm font-label-sm font-semibold bg-surface-container-high text-primary rounded-md shadow-sm">
+                All
+              </button>
+<button class="px-3 py-1 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface transition-colors">
+                Pending
+              </button>
+<button class="px-3 py-1 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface transition-colors">
+                Paid
+              </button>
+</div>
+<!-- Mobile Empty State Toggle Helper -->
+<button class="sm:hidden px-2.5 py-1 text-label-sm font-label-sm border border-[#1E293B] rounded-lg text-on-surface-variant" id="mobileStateToggleBtn">
+              Preview Empty
+            </button>
+</div>
+</div>
+<!-- Table Responsive Canvas -->
+<div class="overflow-x-auto" id="tableContainer">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-[#1E293B] text-label-sm font-label-sm uppercase text-on-surface-variant/80 tracking-wider bg-[#101722]/50">
+<th class="py-3 px-4 font-semibold">Person</th>
+<th class="py-3 px-4 font-semibold">Title</th>
+<th class="py-3 px-4 font-semibold">Category</th>
+<th class="py-3 px-4 font-semibold">Provider</th>
+<th class="py-3 px-4 font-semibold text-right">Amount</th>
+<th class="py-3 px-4 font-semibold">Due Date</th>
+<th class="py-3 px-4 font-semibold">Status</th>
+<th class="py-3 px-4 font-semibold text-right">Quick Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[rgba(30,41,59,0.5)] text-body-md font-body-md">
+<!-- Row 1: Mom | Jio Prepaid -->
+<tr class="hover:bg-slate-800/30 transition-colors group">
+<td class="py-3.5 px-4 font-medium text-on-surface">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 text-label-sm font-label-sm flex items-center justify-center font-bold">M</span>
+<span>Mom</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-medium text-on-surface">Mobile Recharge</td>
+<td class="py-3.5 px-4 text-on-surface-variant">
+<span class="inline-flex items-center gap-1.5 text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[16px] text-sky-400">phonelink_ring</span>
+                    Recharge
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-on-surface-variant">Jio Prepaid</td>
+<td class="py-3.5 px-4 text-right font-semibold text-on-surface font-mono">₹299</td>
+<td class="py-3.5 px-4 text-body-sm font-body-sm text-sky-400">Due in 4 days</td>
+<td class="py-3.5 px-4">
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(56,189,248,0.12)] text-[#38BDF8] border border-[rgba(56,189,248,0.25)]">
+                    Upcoming
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] border border-[#10B981]/30 text-label-sm font-label-sm font-semibold transition-colors">
+                      Mark Paid
+                    </button>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Subhojit | Airtel Postpaid (Overdue) -->
+<tr class="hover:bg-slate-800/30 transition-colors group bg-red-950/10">
+<td class="py-3.5 px-4 font-medium text-on-surface">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-label-sm font-label-sm flex items-center justify-center font-bold">S</span>
+<span>Subhojit</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-medium text-on-surface">Home Fiber &amp; Postpaid</td>
+<td class="py-3.5 px-4 text-on-surface-variant">
+<span class="inline-flex items-center gap-1.5 text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[16px] text-sky-400">router</span>
+                    Recharge
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-on-surface-variant">Airtel</td>
+<td class="py-3.5 px-4 text-right font-semibold text-error font-mono">₹719</td>
+<td class="py-3.5 px-4 text-body-sm font-body-sm text-[#EF4444] font-medium">Oct 24</td>
+<td class="py-3.5 px-4">
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(239,68,68,0.12)] text-[#EF4444] border border-[rgba(239,68,68,0.25)]">
+                    Overdue
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] border border-[#10B981]/30 text-label-sm font-label-sm font-semibold transition-colors">
+                      Mark Paid
+                    </button>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Family | Tata Power -->
+<tr class="hover:bg-slate-800/30 transition-colors group">
+<td class="py-3.5 px-4 font-medium text-on-surface">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-label-sm font-label-sm flex items-center justify-center font-bold">F</span>
+<span>Family</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-medium text-on-surface">Apartment Power</td>
+<td class="py-3.5 px-4 text-on-surface-variant">
+<span class="inline-flex items-center gap-1.5 text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[16px] text-amber-400">bolt</span>
+                    Electricity
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-on-surface-variant">Tata Power</td>
+<td class="py-3.5 px-4 text-right font-semibold text-on-surface font-mono">₹2,450</td>
+<td class="py-3.5 px-4 text-body-sm font-body-sm text-[#F59E0B]">Oct 27</td>
+<td class="py-3.5 px-4">
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(245,158,11,0.12)] text-[#F59E0B] border border-[rgba(245,158,11,0.25)]">
+                    Due
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] border border-[#10B981]/30 text-label-sm font-label-sm font-semibold transition-colors">
+                      Mark Paid
+                    </button>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Subhojit | Google One (Paid) -->
+<tr class="hover:bg-slate-800/30 transition-colors group">
+<td class="py-3.5 px-4 font-medium text-on-surface">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-label-sm font-label-sm flex items-center justify-center font-bold">S</span>
+<span>Subhojit</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-medium text-on-surface">Cloud Storage</td>
+<td class="py-3.5 px-4 text-on-surface-variant">
+<span class="inline-flex items-center gap-1.5 text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[16px] text-emerald-400">cloud_done</span>
+                    Subscription
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-on-surface-variant">Google One</td>
+<td class="py-3.5 px-4 text-right font-semibold text-on-surface font-mono">₹130</td>
+<td class="py-3.5 px-4 text-body-sm font-body-sm text-on-surface-variant">Paid Oct 15</td>
+<td class="py-3.5 px-4">
+<span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold bg-[rgba(16,185,129,0.12)] text-[#10B981] border border-[rgba(16,185,129,0.25)]">
+                    Paid
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1.5">
+<span class="px-2.5 py-1 text-label-sm font-label-sm text-tertiary font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                      Settled
+                    </span>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- EMPTY STATE VIEW (Hidden by default, toggleable) -->
+<div class="hidden p-12 text-center flex-col items-center justify-center" id="emptyStateView">
+<div class="w-16 h-16 rounded-2xl bg-surface-container-high flex items-center justify-center text-on-surface-variant mb-4 border border-[#1E293B]">
+<span class="material-symbols-outlined text-[36px]">receipt_long</span>
+</div>
+<h4 class="text-headline-sm font-headline-sm font-bold text-on-surface">No payments yet</h4>
+<p class="text-body-md font-body-md text-on-surface-variant max-w-sm mt-1 mb-6">
+            Add your first recurring payment to activate automated deadline tracking and household ledger forecasting.
+          </p>
+<button class="flex items-center gap-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white px-5 py-2.5 rounded-xl text-label-lg font-label-lg shadow-lg shadow-indigo-500/25 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>+ Add Payment</span>
+</button>
+</div>
+<!-- Pagination / Vault Footer Status -->
+<div class="px-5 py-3 border-t border-[#1E293B] bg-[#101722]/60 flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span>Showing 4 of 4 active scheduled commitments</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="px-2 font-semibold text-on-surface">Page 1</span>
+<button class="p-1 rounded hover:bg-surface-container disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Interactive JavaScript: Micro-interactions & Empty State Toggle -->
+<script>
+    const stateToggleBtn = document.getElementById('stateToggleBtn');
+    const mobileStateToggleBtn = document.getElementById('mobileStateToggleBtn');
+    const toggleText = document.getElementById('toggleText');
+    const tableContainer = document.getElementById('tableContainer');
+    const emptyStateView = document.getElementById('emptyStateView');
+    const recordCountBadge = document.getElementById('recordCountBadge');
+
+    let isEmpty = false;
+
+    function toggleView() {
+      isEmpty = !isEmpty;
+      if (isEmpty) {
+        tableContainer.classList.add('hidden');
+        emptyStateView.classList.remove('hidden');
+        emptyStateView.classList.add('flex');
+        recordCountBadge.textContent = '0 active entries';
+        if (toggleText) toggleText.textContent = 'Restore Sample Records';
+      } else {
+        tableContainer.classList.remove('hidden');
+        emptyStateView.classList.add('hidden');
+        emptyStateView.classList.remove('flex');
+        recordCountBadge.textContent = '4 active entries';
+        if (toggleText) toggleText.textContent = 'Toggle Empty State';
+      }
+    }
+
+    if (stateToggleBtn) stateToggleBtn.addEventListener('click', toggleView);
+    if (mobileStateToggleBtn) mobileStateToggleBtn.addEventListener('click', toggleView);
+  </script>
+</body></html>

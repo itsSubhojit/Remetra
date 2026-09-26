@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Remetra - Authentication</title>
+<!-- Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-container": "#00a6e0",
+            "error-container": "#93000a",
+            "on-error": "#690005",
+            "tertiary-container": "#00885d",
+            "on-surface": "#dfe2ee",
+            "surface-container": "#1c2028",
+            "on-background": "#dfe2ee",
+            "on-primary-container": "#0d0096",
+            "tertiary": "#4edea3",
+            "surface-container-high": "#262a33",
+            "on-tertiary-container": "#000703",
+            "outline": "#908fa0",
+            "inverse-on-surface": "#2c3039",
+            "surface-container-low": "#181c24",
+            "surface-tint": "#c0c1ff",
+            "secondary-fixed": "#c4e7ff",
+            "on-secondary-container": "#00374d",
+            "surface-bright": "#353942",
+            "secondary": "#7bd0ff",
+            "surface-dim": "#0f131c",
+            "surface-container-highest": "#31353e",
+            "surface-variant": "#31353e",
+            "on-tertiary": "#003824",
+            "inverse-surface": "#dfe2ee",
+            "on-primary": "#1000a9",
+            "on-tertiary-fixed": "#002113",
+            "primary": "#c0c1ff",
+            "outline-variant": "#464554",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-secondary-fixed": "#001e2c",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "primary-container": "#8083ff",
+            "surface-container-lowest": "#0a0e16",
+            "background": "#0f131c",
+            "tertiary-fixed-dim": "#4edea3",
+            "secondary-fixed-dim": "#7bd0ff",
+            "on-secondary-fixed-variant": "#004c69",
+            "on-error-container": "#ffdad6",
+            "on-primary-fixed": "#07006c",
+            "on-secondary": "#00354a",
+            "primary-fixed": "#e1e0ff",
+            "surface": "#0f131c",
+            "tertiary-fixed": "#6ffbbe",
+            "on-surface-variant": "#c7c4d7",
+            "primary-fixed-dim": "#c0c1ff",
+            "error": "#ffb4ab",
+            "inverse-primary": "#494bd6"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-sm": "1rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "margin": "2rem",
+            "gutter": "1.5rem",
+            "space-xl": "2.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "margin-sm": "1rem"
+          },
+          "fontFamily": {
+            "body-md": ["Inter"],
+            "display-mobile": ["Outfit"],
+            "label-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-md": ["Outfit"],
+            "body-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Outfit"],
+            "numeric-metric": ["Outfit"],
+            "label-sm": ["Inter"],
+            "display": ["Outfit"],
+            "headline-sm": ["Outfit"]
+          },
+          "fontSize": {
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "display-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "numeric-metric": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+            "display": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "500" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .mesh-glow-1 {
+      position: absolute;
+      top: -15%;
+      left: -10%;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(11, 15, 23, 0) 70%);
+      filter: blur(40px);
+      pointer-events: none;
+    }
+    .mesh-glow-2 {
+      position: absolute;
+      bottom: -10%;
+      right: 5%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(11, 15, 23, 0) 70%);
+      filter: blur(50px);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body-md min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-primary selection:text-on-primary-container">
+<!-- Main Container Split Layout -->
+<main class="flex-1 w-full max-w-[1440px] mx-auto min-h-screen grid grid-cols-1 lg:grid-cols-12 relative z-10">
+<!-- LEFT COLUMN: Brand Showcase & Alert Previews (Hidden on small screens, shown lg+) -->
+<div class="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col justify-between p-12 xl:p-16 relative overflow-hidden border-r border-outline-variant/30">
+<div class="mesh-glow-1"></div>
+<div class="mesh-glow-2"></div>
+<!-- Top Header / Logo -->
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-xl bg-primary-container/20 border border-primary/40 flex items-center justify-center text-primary shadow-[0_0_20px_rgba(99,102,241,0.25)]">
+<span class="material-symbols-outlined text-primary text-[24px]">receipt_long</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-extrabold text-on-surface tracking-tight leading-none">Remetra</h1>
+<span class="text-label-sm font-label-sm text-on-surface-variant tracking-wider uppercase">Household Vault</span>
+</div>
+</div>
+<p class="text-headline-sm font-headline-sm text-on-surface font-normal max-w-md mt-6 leading-snug">
+          Smart Bill Reminders &amp; Spend Insights
+        </p>
+<p class="text-body-md font-body-md text-on-surface-variant max-w-sm mt-2">
+          Calm financial foresight. Manage utility schedules, subscriptions, and recurring obligations without noise.
+        </p>
+</div>
+<!-- Middle Content: High-Fidelity Alert Visual Cards -->
+<div class="relative z-10 my-8 space-y-4 max-w-md">
+<div class="text-label-sm font-label-sm uppercase tracking-widest text-outline">Real-time Cycle Monitoring</div>
+<!-- Alert 1: Tata Power Due Tomorrow -->
+<div class="bg-surface-container-low/80 backdrop-blur-md border border-outline-variant/50 rounded-xl p-4 transition-all duration-300 hover:border-primary/40 shadow-sm relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-container"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary border border-outline-variant/40">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<div>
+<h4 class="text-body-md font-body-md font-semibold text-on-surface">Tata Power</h4>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>Due tomorrow • Auto-pay unlinked</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-body-lg font-numeric-metric font-semibold text-on-surface">₹3,420</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-error-container/30 text-error border border-error/30">
+                Action Req.
+              </span>
+</div>
+</div>
+</div>
+<!-- Alert 2: Airtel Prepaid Validity -->
+<div class="bg-surface-container-low/80 backdrop-blur-md border border-outline-variant/50 rounded-xl p-4 transition-all duration-300 hover:border-primary/40 shadow-sm relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary border border-outline-variant/40">
+<span class="material-symbols-outlined text-[20px]">signal_cellular_alt</span>
+</div>
+<div>
+<h4 class="text-body-md font-body-md font-semibold text-on-surface">Airtel Prepaid</h4>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">event_repeat</span>
+<span>Validity expiring in 3 days</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-body-lg font-numeric-metric font-semibold text-on-surface">₹839</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-secondary-container/20 text-secondary border border-secondary-container/40">
+                Cycle Alert
+              </span>
+</div>
+</div>
+</div>
+<!-- Metric pill summary -->
+<div class="grid grid-cols-2 gap-3 pt-2">
+<div class="bg-surface-container-lowest/60 border border-outline-variant/30 rounded-lg p-3">
+<div class="text-label-sm font-label-sm text-on-surface-variant">Upcoming (7d)</div>
+<div class="text-headline-sm font-numeric-metric font-semibold text-on-surface mt-0.5">₹14,250</div>
+</div>
+<div class="bg-surface-container-lowest/60 border border-outline-variant/30 rounded-lg p-3">
+<div class="text-label-sm font-label-sm text-on-surface-variant">Protected Vault</div>
+<div class="text-headline-sm font-headline-sm font-semibold text-tertiary mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">verified_user</span> 100% Secure
+            </div>
+</div>
+</div>
+</div>
+<!-- Bottom Reassurance / Testimonial -->
+<div class="relative z-10 pt-6 border-t border-outline-variant/30 flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">shield</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+          “Household bills organized without banking credentials or credential risks. Built upon isolated zero-trust cloud infrastructure.”
+        </p>
+</div>
+</div>
+<!-- RIGHT COLUMN: Interactive Auth Card -->
+<div class="lg:col-span-6 xl:col-span-5 flex flex-col justify-center items-center p-6 sm:p-10 md:p-12 relative">
+<!-- Background Ambient Flare for Right Column -->
+<div class="absolute -top-12 -right-12 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Mobile Brand Header (Visible only on mobile) -->
+<div class="lg:hidden flex items-center gap-3 mb-6 self-start">
+<div class="w-9 h-9 rounded-xl bg-primary-container/20 border border-primary/40 flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm font-extrabold text-on-surface tracking-tight">Remetra</h2>
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase">Household Vault</span>
+</div>
+</div>
+<!-- Auth Container Box -->
+<div class="w-full max-w-md bg-surface-container-low border border-outline-variant/50 rounded-2xl p-6 sm:p-8 shadow-xl relative backdrop-blur-sm">
+<!-- Tabbed Switcher -->
+<div class="flex items-center justify-between p-1 bg-surface-container-lowest rounded-xl border border-outline-variant/40 mb-6">
+<button class="flex-1 py-2 text-center text-label-md font-label-md rounded-lg transition-all duration-150 font-semibold bg-surface-container-high text-primary border border-outline-variant/40 shadow-sm" id="tab-login" onclick="switchAuthTab('login')">
+            Login
+          </button>
+<button class="flex-1 py-2 text-center text-label-md font-label-md rounded-lg transition-all duration-150 font-semibold text-on-surface-variant hover:text-on-surface" id="tab-register" onclick="switchAuthTab('register')">
+            Register
+          </button>
+<button class="flex-1 py-2 text-center text-label-md font-label-md rounded-lg transition-all duration-150 font-semibold text-on-surface-variant hover:text-on-surface" id="tab-forgot" onclick="switchAuthTab('forgot')">
+            Reset
+          </button>
+</div>
+<!-- FORM 1: LOGIN MODE -->
+<div class="space-y-4" id="panel-login">
+<div>
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Welcome back</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">Access your household vault and scheduled debits.</p>
+</div>
+<form class="space-y-4 pt-1" onsubmit="event.preventDefault();">
+<!-- Email Input -->
+<div class="space-y-1.5">
+<label class="block text-label-md font-label-md text-on-surface" for="login-email">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">mail</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant/60 rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition" id="login-email" placeholder="alex@remetra.app" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="block text-label-md font-label-md text-on-surface" for="login-password">Password</label>
+<button class="text-label-sm font-label-sm text-primary hover:underline" onclick="switchAuthTab('forgot')" type="button">Forgot Password?</button>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">lock</span>
+<input class="w-full h-10 pl-10 pr-10 bg-surface-container-lowest border border-outline-variant/60 rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition" id="login-password" placeholder="••••••••••••" type="password"/>
+<button class="absolute right-3 top-2.5 text-outline hover:text-on-surface flex items-center" onclick="togglePasswordVisibility('login-password', this)" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember me check -->
+<div class="flex items-center justify-between pt-1">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant/80 text-primary-container focus:ring-0 focus:ring-offset-0" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Keep session active</span>
+</label>
+</div>
+<!-- Primary Action -->
+<button class="w-full h-10 rounded-lg bg-primary-container text-on-primary-container font-label-lg font-semibold hover:opacity-95 active:scale-[0.98] transition shadow-[0_4px_14px_rgba(99,102,241,0.35)] flex items-center justify-center gap-2" type="submit">
+<span>Sign In to Remetra</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</form>
+<!-- Divider -->
+<div class="relative my-4">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/30"></div>
+</div>
+<div class="relative flex justify-center text-label-sm font-label-sm">
+<span class="px-3 bg-surface-container-low text-on-surface-variant">Or continue with</span>
+</div>
+</div>
+<!-- Google Social Sign In -->
+<button class="w-full h-10 rounded-lg bg-surface-container-lowest border border-outline-variant/50 hover:border-outline-variant text-on-surface font-label-md font-medium flex items-center justify-center gap-3 transition active:scale-[0.98]" type="button">
+<svg class="w-4 h-4" viewbox="0 0 24 24">
+<path d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.3 8.8 5 12 5z" fill="#EA4335"></path>
+<path d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5.1 3.7-8.9z" fill="#4285F4"></path>
+<path d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.4s.2-1.7.4-2.4L1.6 7c-.8 1.6-1.3 3.4-1.3 5.3s.5 3.7 1.3 5.3l3.7-2.9z" fill="#FBBC05"></path>
+<path d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.2 0-5.8-2.3-6.7-5.3L1.6 16c1.9 3.8 5.8 6.4 10.4 6.4z" fill="#34A853"></path>
+</svg>
+<span>Continue with Google</span>
+</button>
+<!-- Footer Switcher helper -->
+<p class="text-center text-body-sm font-body-sm text-on-surface-variant pt-2">
+            Don't have an account? 
+            <button class="text-primary font-semibold hover:underline" onclick="switchAuthTab('register')" type="button">Register now</button>
+</p>
+</div>
+<!-- FORM 2: REGISTER MODE (Initially Hidden) -->
+<div class="space-y-4 hidden" id="panel-register">
+<div>
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Create vault account</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">Start monitoring your commitments with zero data sharing.</p>
+</div>
+<form class="space-y-3 pt-1" onsubmit="event.preventDefault();">
+<!-- Full Name -->
+<div class="space-y-1">
+<label class="block text-label-md font-label-md text-on-surface" for="reg-name">Full Name</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">person</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant/60 rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition" id="reg-name" placeholder="Alex Morgan" type="text"/>
+</div>
+</div>
+<!-- Email Input -->
+<div class="space-y-1">
+<label class="block text-label-md font-label-md text-on-surface" for="reg-email">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">mail</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant/60 rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition" id="reg-email" placeholder="alex@remetra.app" type="email"/>
+</div>
+</div>
+<!-- Password -->
+<div class="space-y-1">
+<label class="block text-label-md font-label-md text-on-surface" for="reg-password">Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">lock</span>
+<input class="w-full h-10 pl-10 pr-10 bg-surface-container-lowest border border-outline-variant/60 rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition" id="reg-password" oninput="updatePasswordStrength(this.value)" placeholder="Minimum 8 characters" type="password"/>
+<button class="absolute right-3 top-2.5 text-outline hover:text-on-surface flex items-center" onclick="togglePasswordVisibility('reg-password', this)" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+<!-- Password Strength Meter -->
+<div class="pt-1">
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden flex">
+<div class="h-full w-1/4 bg-error transition-all duration-300" id="strength-bar"></div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-label-sm font-label-sm text-error" id="strength-text">Weak</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Use uppercase &amp; symbols</span>
+</div>
+</div>
+</div>
+<!-- Confirm Password -->
+<div class="space-y-1">
+<label class="block text-label-md font-label-md text-on-surface" for="reg-confirm">Confirm Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">lock_reset</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant/60 rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition" id="reg-confirm" placeholder="Repeat your password" type="password"/>
+</div>
+</div>
+<!-- Terms notice -->
+<p class="text-body-sm font-body-sm text-on-surface-variant text-[11px] leading-tight pt-1">
+              By creating an account, you accept Remetra's zero-knowledge security agreement.
+            </p>
+<!-- Primary Action Button -->
+<button class="w-full h-10 rounded-lg bg-primary-container text-on-primary-container font-label-lg font-semibold hover:opacity-95 active:scale-[0.98] transition shadow-[0_4px_14px_rgba(99,102,241,0.35)] flex items-center justify-center gap-2" type="submit">
+<span>Create Account</span>
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+</button>
+</form>
+<!-- Divider -->
+<div class="relative my-3">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/30"></div>
+</div>
+<div class="relative flex justify-center text-label-sm font-label-sm">
+<span class="px-3 bg-surface-container-low text-on-surface-variant">Or sign up with</span>
+</div>
+</div>
+<!-- Google Social Sign Up -->
+<button class="w-full h-10 rounded-lg bg-surface-container-lowest border border-outline-variant/50 hover:border-outline-variant text-on-surface font-label-md font-medium flex items-center justify-center gap-3 transition active:scale-[0.98]" type="button">
+<svg class="w-4 h-4" viewbox="0 0 24 24">
+<path d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.3 8.8 5 12 5z" fill="#EA4335"></path>
+<path d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5.1 3.7-8.9z" fill="#4285F4"></path>
+<path d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.4s.2-1.7.4-2.4L1.6 7c-.8 1.6-1.3 3.4-1.3 5.3s.5 3.7 1.3 5.3l3.7-2.9z" fill="#FBBC05"></path>
+<path d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.2 0-5.8-2.3-6.7-5.3L1.6 16c1.9 3.8 5.8 6.4 10.4 6.4z" fill="#34A853"></path>
+</svg>
+<span>Sign up with Google</span>
+</button>
+<!-- Helper -->
+<p class="text-center text-body-sm font-body-sm text-on-surface-variant pt-2">
+            Already registered? 
+            <button class="text-primary font-semibold hover:underline" onclick="switchAuthTab('login')" type="button">Log in here</button>
+</p>
+</div>
+<!-- FORM 3: FORGOT PASSWORD MODE (Initially Hidden) -->
+<div class="space-y-5 hidden" id="panel-forgot">
+<div>
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest border border-outline-variant/50 flex items-center justify-center text-primary mb-3">
+<span class="material-symbols-outlined text-[22px]">key</span>
+</div>
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Recover vault access</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
+              Enter your verified email and we'll dispatch an end-to-end encrypted recovery link.
+            </p>
+</div>
+<form class="space-y-4 pt-1" onsubmit="event.preventDefault(); handleForgotSubmit();">
+<div class="space-y-1.5">
+<label class="block text-label-md font-label-md text-on-surface" for="forgot-email">Account Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-outline">alternate_email</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant/60 rounded-lg text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition" id="forgot-email" placeholder="name@domain.com" required="" type="email"/>
+</div>
+</div>
+<!-- Confirmation message placeholder -->
+<div class="hidden p-3 rounded-lg bg-tertiary-container/20 border border-tertiary/40 text-tertiary text-body-sm font-body-sm flex items-center gap-2" id="forgot-success-banner">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Reset instructions sent if this email is on file.</span>
+</div>
+<button class="w-full h-10 rounded-lg bg-primary-container text-on-primary-container font-label-lg font-semibold hover:opacity-95 active:scale-[0.98] transition shadow-[0_4px_14px_rgba(99,102,241,0.35)] flex items-center justify-center gap-2" type="submit">
+<span>Send Reset Email</span>
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+<!-- Back to Login Action -->
+<button class="w-full h-10 rounded-lg bg-surface-container-lowest border border-outline-variant/40 hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md font-semibold transition flex items-center justify-center gap-2" onclick="switchAuthTab('login')" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Back to Login</span>
+</button>
+</form>
+</div>
+</div>
+<!-- Compliance & Status Footer -->
+<div class="mt-8 flex items-center gap-6 text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span> Systems Operational
+        </span>
+<span>•</span>
+<span>Firebase Auth Protected</span>
+<span>•</span>
+<span class="hover:text-on-surface cursor-pointer">Privacy Protocol</span>
+</div>
+</div>
+</main>
+<!-- Vanilla JavaScript for Tab Transitions & Interactive Micro-features -->
+<script>
+    function switchAuthTab(targetTab) {
+      const tabs = ['login', 'register', 'forgot'];
+      
+      tabs.forEach(tab => {
+        const btn = document.getElementById('tab-' + tab);
+        const panel = document.getElementById('panel-' + tab);
+        
+        if (tab === targetTab) {
+          // Set active styling on button
+          btn.className = "flex-1 py-2 text-center text-label-md font-label-md rounded-lg transition-all duration-150 font-semibold bg-surface-container-high text-primary border border-outline-variant/40 shadow-sm";
+          panel.classList.remove('hidden');
+        } else {
+          // Set inactive styling
+          btn.className = "flex-1 py-2 text-center text-label-md font-label-md rounded-lg transition-all duration-150 font-semibold text-on-surface-variant hover:text-on-surface";
+          panel.classList.add('hidden');
+        }
+      });
+
+      // Reset success banner if switching tabs
+      const banner = document.getElementById('forgot-success-banner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    function togglePasswordVisibility(inputId, buttonEl) {
+      const input = document.getElementById(inputId);
+      const icon = buttonEl.querySelector('.material-symbols-outlined');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        input.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    }
+
+    function updatePasswordStrength(val) {
+      const bar = document.getElementById('strength-bar');
+      const text = document.getElementById('strength-text');
+      if (!bar || !text) return;
+
+      if (!val || val.length === 0) {
+        bar.className = "h-full w-0 bg-transparent transition-all duration-300";
+        text.textContent = "";
+        return;
+      }
+
+      if (val.length < 6) {
+        bar.className = "h-full w-1/4 bg-error transition-all duration-300";
+        text.className = "text-label-sm font-label-sm text-error";
+        text.textContent = "Weak";
+      } else if (val.length < 10) {
+        bar.className = "h-full w-2/4 bg-secondary transition-all duration-300";
+        text.className = "text-label-sm font-label-sm text-secondary";
+        text.textContent = "Fair";
+      } else {
+        bar.className = "h-full w-full bg-tertiary transition-all duration-300";
+        text.className = "text-label-sm font-label-sm text-tertiary";
+        text.textContent = "Strong Vault Password";
+      }
+    }
+
+    function handleForgotSubmit() {
+      const emailInput = document.getElementById('forgot-email');
+      const banner = document.getElementById('forgot-success-banner');
+      if (emailInput && emailInput.value) {
+        banner.classList.remove('hidden');
+      }
+    }
+  </script>
+</body></html>
