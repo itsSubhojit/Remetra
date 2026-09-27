@@ -249,7 +249,7 @@ export const DashboardPage = () => {
   const subLen = (metrics.catPercentages.Subscription / 100) * c;
 
   return (
-    <div className="bg-[#0B0F17] text-on-surface antialiased min-h-screen flex selection:bg-primary-container selection:text-white">
+    <div className="bg-[#0B0F17] text-on-surface antialiased min-h-screen flex w-full max-w-full overflow-x-hidden selection:bg-primary-container selection:text-white">
       {/* Shared Persistent Sidebar */}
       <Sidebar
         onOpenNewPayment={() => {
@@ -259,34 +259,31 @@ export const DashboardPage = () => {
       />
 
       {/* Main Content Canvas */}
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0 pb-28 md:pb-12 bg-[#0B0F17]">
+      <div className="flex-1 md:ml-64 flex flex-col min-w-0 w-full pb-28 md:pb-12 bg-[#0B0F17] overflow-x-hidden">
         {/* Top Navigation Header */}
-        <header className="flex justify-between items-center w-full px-4 md:px-8 py-4 sticky top-0 z-30 bg-[#0B0F17]/85 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="md:hidden flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#6366F1] flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-[18px]">receipt_long</span>
-              </div>
-              <span className="text-headline-sm font-headline-sm font-extrabold text-on-surface tracking-tight">Remetra</span>
+        <header className="flex justify-between items-center w-full px-4 md:px-8 py-3 sticky top-0 z-30 bg-[#0B0F17]/85 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#6366F1] to-[#38BDF8] flex items-center justify-center text-white shrink-0 shadow-md">
+              <span className="material-symbols-outlined text-[18px]">receipt_long</span>
             </div>
-            <div>
-              <h1 className="text-headline-sm md:text-headline-md font-headline-md font-bold text-on-surface tracking-tight">
+            <div className="min-w-0">
+              <h1 className="text-headline-sm md:text-headline-md font-headline-md font-bold text-on-surface tracking-tight truncate">
                 Good day, {displayName}
               </h1>
-              <p className="text-body-sm font-body-sm text-on-surface-variant hidden sm:block">
+              <p className="text-body-sm font-body-sm text-on-surface-variant hidden sm:block truncate">
                 Here's your real-time payment schedule &amp; spend insights.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={fetchPayments}
-              className="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
               title="Refresh Data"
               type="button"
             >
-              <span className={`material-symbols-outlined text-[20px] ${loading ? "animate-spin" : ""}`}>refresh</span>
+              <span className={`material-symbols-outlined text-[18px] ${loading ? "animate-spin" : ""}`}>refresh</span>
             </button>
 
             <button
@@ -294,7 +291,7 @@ export const DashboardPage = () => {
                 setEditingPayment(null);
                 setIsDrawerOpen(true);
               }}
-              className="flex items-center gap-2 bg-gradient-to-r from-[#6366F1] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white px-4 py-2 rounded-lg text-label-lg font-label-lg shadow-[0_4px_14px_rgba(99,102,241,0.35)] transition-all duration-150 active:scale-[0.98]"
+              className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-[#6366F1] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white px-3.5 py-1.5 rounded-lg text-label-md font-label-md shadow-[0_4px_14px_rgba(99,102,241,0.35)] transition-all active:scale-[0.98]"
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
@@ -824,17 +821,24 @@ export const DashboardPage = () => {
                     const isOverdue = payment.status === "Overdue";
                     return (
                       <div key={payment._id} className="p-4 rounded-xl bg-[#101722]/80 border border-[#1E293B] space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary mb-1">
-                              {payment.personName}
-                            </span>
-                            <h4 className="font-headline-sm font-semibold text-on-surface">{payment.title}</h4>
-                            <p className="text-body-sm text-on-surface-variant">
-                              {payment.provider} • {payment.category}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary border border-primary/20 font-medium">
+                                {payment.personName || "Self"}
+                              </span>
+                              <span className="text-body-sm text-outline font-medium">
+                                {payment.category}
+                              </span>
+                            </div>
+                            <h4 className="font-headline-sm font-semibold text-on-surface truncate">{payment.title}</h4>
+                            <p className="text-body-sm text-on-surface-variant truncate">
+                              {payment.provider}
                             </p>
                           </div>
-                          {getStatusBadge(payment.status)}
+                          <div className="shrink-0">
+                            {getStatusBadge(payment.status)}
+                          </div>
                         </div>
 
                         <div className="flex items-center justify-between pt-2 border-t border-[#1E293B]">

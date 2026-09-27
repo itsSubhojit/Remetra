@@ -188,35 +188,30 @@ export const SpendInsightsPage = () => {
   const subLen = (circumference * metrics.catPercentages.Subscription) / 100;
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col md:flex-row text-on-surface antialiased font-body-md">
+    <div className="min-h-screen bg-surface flex flex-col md:flex-row text-on-surface antialiased font-body-md w-full max-w-full overflow-x-hidden">
       {/* Persistent Left Sidebar */}
       <Sidebar onOpenNewPayment={() => { setEditingPayment(null); setIsDrawerOpen(true); }} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col md:pl-64 min-h-screen pb-28 md:pb-12">
+      <div className="flex-1 min-w-0 w-full flex flex-col md:pl-64 min-h-screen pb-28 md:pb-12 overflow-x-hidden">
         {/* Sticky Top Header */}
-        <header className="h-16 px-4 md:px-8 border-b border-[#1E293B] flex items-center justify-between sticky top-0 bg-[#0B0F17]/95 backdrop-blur-md z-30">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
-              <span className="material-symbols-outlined text-[20px]">insights</span>
+        <header className="px-4 md:px-8 py-3 min-h-14 border-b border-[#1E293B] flex items-center justify-between sticky top-0 bg-[#0B0F17]/95 backdrop-blur-md z-30">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+              <span className="material-symbols-outlined text-[18px]">insights</span>
             </div>
-            <div>
-              <h1 className="text-headline-md font-headline-md font-bold text-on-surface tracking-tight">
-                Spend Insights
-              </h1>
-              <p className="text-body-sm font-body-sm text-on-surface-variant hidden sm:block">
-                Deep analytical breakdowns &amp; verified settlement intelligence.
-              </p>
-            </div>
+            <h1 className="text-headline-sm md:text-headline-md font-headline-md font-bold text-on-surface tracking-tight truncate">
+              Spend Insights
+            </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Time Filter Toggle */}
             <div className="bg-[#151D2A] border border-[#1E293B] p-0.5 rounded-lg flex items-center text-label-sm font-label-sm">
               <button
                 type="button"
                 onClick={() => setTimeFilter("all")}
-                className={`px-3 py-1 rounded-md transition-colors ${
+                className={`px-2.5 py-1 rounded-md text-[11px] sm:text-label-sm font-medium transition-colors ${
                   timeFilter === "all"
                     ? "bg-primary text-on-primary font-semibold"
                     : "text-on-surface-variant hover:text-on-surface"
@@ -227,7 +222,7 @@ export const SpendInsightsPage = () => {
               <button
                 type="button"
                 onClick={() => setTimeFilter("month")}
-                className={`px-3 py-1 rounded-md transition-colors ${
+                className={`px-2.5 py-1 rounded-md text-[11px] sm:text-label-sm font-medium transition-colors ${
                   timeFilter === "month"
                     ? "bg-primary text-on-primary font-semibold"
                     : "text-on-surface-variant hover:text-on-surface"
@@ -239,11 +234,11 @@ export const SpendInsightsPage = () => {
 
             <button
               onClick={fetchPayments}
-              className="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
               title="Refresh Insights"
               type="button"
             >
-              <span className={`material-symbols-outlined text-[20px] ${loading ? "animate-spin" : ""}`}>refresh</span>
+              <span className={`material-symbols-outlined text-[18px] ${loading ? "animate-spin" : ""}`}>refresh</span>
             </button>
           </div>
         </header>

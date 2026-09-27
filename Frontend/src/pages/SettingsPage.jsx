@@ -99,32 +99,19 @@ export const SettingsPage = () => {
       {/* Main Page Canvas */}
       <div className="flex-1 md:ml-64 flex flex-col min-w-0 pb-28 md:pb-12 bg-[#0B0F17]">
         {/* Sticky Header */}
-        <header className="flex justify-between items-center w-full px-4 md:px-8 py-4 sticky top-0 z-30 bg-[#0B0F17]/85 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="md:hidden flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#6366F1] flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-[18px]">receipt_long</span>
-              </div>
-              <span className="text-headline-sm font-headline-sm font-extrabold text-on-surface tracking-tight">Remetra</span>
+        <header className="flex items-center justify-between w-full px-4 md:px-8 py-3 sticky top-0 z-30 bg-[#0B0F17]/85 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#6366F1] to-[#38BDF8] flex items-center justify-center text-white shrink-0">
+              <span className="material-symbols-outlined text-[18px]">settings</span>
             </div>
-            <div>
-              <h1 className="text-headline-sm md:text-headline-md font-headline-md font-bold text-on-surface tracking-tight">
-                Account &amp; Settings
-              </h1>
-              <p className="text-body-sm font-body-sm text-on-surface-variant hidden sm:block">
-                Manage your household profile, notification preferences, and vault security.
-              </p>
-            </div>
+            <h1 className="text-headline-sm md:text-headline-md font-headline-md font-bold text-on-surface tracking-tight truncate">
+              Account &amp; Settings
+            </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#151D2A] border border-[#1E293B]">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-[10px] text-white font-bold">
-                {initials}
-              </div>
-              <span className="text-label-sm font-label-sm font-semibold text-on-surface hidden sm:inline">
-                {displayName}
-              </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-xs text-white font-bold ring-1 ring-white/10">
+              {initials}
             </div>
           </div>
         </header>
@@ -138,45 +125,45 @@ export const SettingsPage = () => {
             </div>
           )}
 
-          {/* Sub-Navigation Tabs */}
-          <div className="flex items-center gap-2 border-b border-[#1E293B] pb-1.5 overflow-x-auto custom-scroll whitespace-nowrap">
+          {/* Sub-Navigation Segmented Control */}
+          <div className="grid grid-cols-3 gap-1 bg-[#151D2A] p-1.5 rounded-2xl border border-[#1E293B] w-full">
             <button
               type="button"
               onClick={() => handleTabChange("profile")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-label-lg font-label-lg font-semibold transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs sm:text-label-md font-semibold transition-all ${
                 activeTab === "profile"
                   ? "bg-primary-container text-on-primary-container shadow-md shadow-primary-container/20"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
-              <span className="material-symbols-outlined text-[20px]">person</span>
-              <span>Profile &amp; Account</span>
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px]">person</span>
+              <span className="truncate">Profile</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleTabChange("preferences")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-label-lg font-label-lg font-semibold transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs sm:text-label-md font-semibold transition-all ${
                 activeTab === "preferences"
                   ? "bg-primary-container text-on-primary-container shadow-md shadow-primary-container/20"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
-              <span className="material-symbols-outlined text-[20px]">tune</span>
-              <span>Vault Settings</span>
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px]">tune</span>
+              <span className="truncate">Settings</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleTabChange("security")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-label-lg font-label-lg font-semibold transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-xs sm:text-label-md font-semibold transition-all ${
                 activeTab === "security"
                   ? "bg-primary-container text-on-primary-container shadow-md shadow-primary-container/20"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
-              <span className="material-symbols-outlined text-[20px]">shield</span>
-              <span>Security &amp; Reset</span>
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px]">shield</span>
+              <span className="truncate">Security</span>
             </button>
           </div>
 
@@ -207,7 +194,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Edit Display Name */}
-              <div className="p-6 rounded-2xl bg-[#151D2A] border border-[#1E293B] space-y-4">
+              <div className="p-4 sm:p-6 rounded-2xl bg-[#151D2A] border border-[#1E293B] space-y-4">
                 <div>
                   <h3 className="text-label-lg font-label-lg font-semibold text-on-surface">Personal Information</h3>
                   <p className="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
@@ -226,12 +213,12 @@ export const SettingsPage = () => {
                         value={nameInput}
                         onChange={(e) => setNameInput(e.target.value)}
                         placeholder="Enter your name"
-                        className="flex-1 h-11 px-3.5 bg-[#0B0F17] border border-[#1E293B] rounded-xl text-body-md text-on-surface focus:outline-none focus:border-primary transition"
+                        className="w-full sm:flex-1 h-11 px-3.5 bg-[#0B0F17] border border-[#1E293B] focus:border-primary rounded-xl text-body-md text-on-surface placeholder:text-outline focus:outline-none transition-all"
                       />
                       <button
                         type="submit"
                         disabled={isSavingName || !nameInput.trim() || nameInput.trim() === user?.displayName}
-                        className="px-6 h-11 rounded-xl bg-primary-container text-on-primary-container font-label-md font-semibold hover:opacity-95 transition disabled:opacity-40"
+                        className="w-full sm:w-auto px-6 h-11 rounded-xl bg-primary hover:bg-primary/90 text-on-primary font-label-md font-semibold transition-all disabled:bg-surface-container-high disabled:text-outline/60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {isSavingName ? "Saving..." : "Save Changes"}
                       </button>
