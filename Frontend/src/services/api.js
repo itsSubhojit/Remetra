@@ -1,4 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+let rawBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").trim().replace(/\/+$/, "");
+if (rawBaseUrl.endsWith("/api")) {
+  rawBaseUrl = rawBaseUrl.slice(0, -4);
+}
+const BASE_URL = rawBaseUrl;
 
 /**
  * Production API Client for Remetra Backend

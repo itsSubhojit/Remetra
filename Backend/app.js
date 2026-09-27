@@ -13,10 +13,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/payments", paymentRouter)
+app.get("/", (req, res) => {
+  res.json({ message: "Remetra Backend API is running" });
+});
 
-app.use(errorHandler)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
+app.use("/api/payments", paymentRouter);
+app.use("/payments", paymentRouter);
 
+app.use(errorHandler);
 
-export default app
+export default app;
