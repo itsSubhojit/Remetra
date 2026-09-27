@@ -19,6 +19,7 @@ export const AuthPage = () => {
   const [regPassword, setRegPassword] = useState("");
   const [regConfirm, setRegConfirm] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, text: "", color: "" });
 
   // Reset form state
@@ -101,6 +102,10 @@ export const AuthPage = () => {
     }
     if (regPassword !== regConfirm) {
       setError("Passwords do not match.");
+      return;
+    }
+    if (!acceptedTerms) {
+      setError("You must agree to the Terms of Service and acknowledge the Privacy Policy to create an account.");
       return;
     }
     try {
@@ -593,9 +598,24 @@ export const AuthPage = () => {
                     </div>
                   </div>
 
-                  <p className="text-body-sm font-body-sm text-on-surface-variant text-[11px] leading-tight pt-1">
-                    By creating an account, you accept Remetra's zero-knowledge security agreement.
-                  </p>
+                  <label className="flex items-start gap-2.5 cursor-pointer text-body-sm font-body-sm text-on-surface-variant text-xs leading-snug pt-1 select-none">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant/80 text-primary-container focus:ring-0 focus:ring-offset-0 mt-0.5 shrink-0 cursor-pointer"
+                    />
+                    <span>
+                      I agree to the{" "}
+                      <Link to="/terms" target="_blank" className="text-primary font-medium hover:underline">
+                        Terms of Service
+                      </Link>{" "}
+                      and acknowledge the{" "}
+                      <Link to="/privacy-policy" target="_blank" className="text-primary font-medium hover:underline">
+                        Privacy Policy
+                      </Link>.
+                    </span>
+                  </label>
 
                   <button
                     className="w-full h-10 rounded-lg bg-primary-container text-on-primary-container font-label-lg font-semibold hover:opacity-95 active:scale-[0.98] transition shadow-[0_4px_14px_rgba(99,102,241,0.35)] flex items-center justify-center gap-2 disabled:opacity-60"

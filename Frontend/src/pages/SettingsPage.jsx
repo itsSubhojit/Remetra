@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { paymentsApi } from "../services/api";
 import { Sidebar } from "../components/Navigation/Sidebar";
 import { PaymentFormDrawer } from "../components/Modals/PaymentFormDrawer";
 
 export const SettingsPage = () => {
-  const { user, updateUserProfile, resetPassword, logout } = useAuth();
+  const { user, updateUserProfile, resetPassword, logout, getToken } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -18,6 +19,11 @@ export const SettingsPage = () => {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Account Deletion State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   // Drawer state for "+ New Payment" triggered from sidebar
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -86,6 +92,30 @@ export const SettingsPage = () => {
       navigate("/auth");
     } catch (err) {
       console.error("Failed to log out:", err);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText.trim().toLowerCase() !== "delete") return;
+    try {
+      setIsDeletingAccount(true);
+      setError("");
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Authentication session expired. Please log in again.");
+      }
+      await paymentsApi.deleteAccount(token);
+      await logout();
+      navigate("/auth", {
+        replace: true,
+        state: { message: "Your account and all associated payment data have been permanently deleted." },
+      });
+    } catch (err) {
+      console.error("Error deleting account:", err);
+      setError(err.message || "Failed to delete account. Please contact support.");
+      setIsDeleteModalOpen(false);
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -349,10 +379,35 @@ export const SettingsPage = () => {
                 )}
               </div>
 
-              {/* Session Termination */}
-              <div className="p-6 rounded-2xl bg-red-950/20 border border-error/30 space-y-4">
+              {/* Danger Zone: Account Deletion */}
+              <div className="p-6 rounded-2xl bg-red-950/40 border border-red-500/40 space-y-4">
                 <div>
-                  <h3 className="text-label-lg font-label-lg font-semibold text-error">End Vault Session</h3>
+                  <h3 className="text-label-lg font-label-lg font-semibold text-red-400 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[20px]">warning</span>
+                    Danger Zone: Permanent Account Deletion
+                  </h3>
+                  <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">
+                    Permanently delete your Remetra account, payment history, and identity records. This action cannot be undone.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteConfirmText("");
+                    setIsDeleteModalOpen(true);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-label-md font-semibold flex items-center gap-2 transition shadow-lg shadow-red-950/50"
+                >
+                  <span className="material-symbols-outlined text-[18px]">delete_forever</span>
+                  <span>Delete Account</span>
+                </button>
+              </div>
+
+              {/* Session Termination */}
+              <div className="p-6 rounded-2xl bg-surface-container-high/40 border border-outline-variant/30 space-y-4">
+                <div>
+                  <h3 className="text-label-lg font-label-lg font-semibold text-on-surface">End Vault Session</h3>
                   <p className="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
                     Log out of this browser session and clear your active Firebase token.
                   </p>
@@ -361,7 +416,7 @@ export const SettingsPage = () => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="px-5 py-2.5 rounded-xl bg-error text-on-error hover:opacity-90 font-label-md font-semibold flex items-center gap-2 transition"
+                  className="px-5 py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-container border border-outline-variant/40 text-on-surface font-label-md font-semibold flex items-center gap-2 transition"
                 >
                   <span className="material-symbols-outlined text-[18px]">logout</span>
                   <span>Sign Out of Remetra</span>
@@ -371,6 +426,71 @@ export const SettingsPage = () => {
           )}
         </main>
       </div>
+
+      {/* Account Deletion Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-[#151D2A] border border-red-500/40 rounded-2xl p-6 shadow-2xl space-y-5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center shrink-0 border border-red-500/30">
+                <span className="material-symbols-outlined text-[24px]">error</span>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-title-lg font-bold text-on-surface">Delete Remetra Account?</h3>
+                <p className="text-body-sm text-on-surface-variant">
+                  This will <strong className="text-red-400">permanently delete</strong> all your recorded bills, payment history, spend stats, and your user authentication profile.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-red-950/30 border border-red-500/20 text-red-300 text-xs leading-relaxed">
+              ⚠️ <strong>Warning:</strong> Data deletion is immediate and non-recoverable. Please type <span className="font-mono font-bold underline">delete</span> below to confirm.
+            </div>
+
+            <div>
+              <label className="block text-label-sm font-semibold text-on-surface-variant mb-1.5">
+                Type "delete" to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="delete"
+                className="w-full px-4 py-2.5 bg-[#0B0F17] border border-outline-variant/50 focus:border-red-500 rounded-xl text-on-surface placeholder:text-on-surface-variant/40 outline-none text-body-sm font-mono"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeletingAccount}
+                className="px-4 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container border border-outline-variant/40 text-on-surface text-label-md font-semibold transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText.trim().toLowerCase() !== "delete" || isDeletingAccount}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-label-md font-semibold flex items-center gap-2 transition shadow-lg shadow-red-950/50"
+              >
+                {isDeletingAccount ? (
+                  <>
+                    <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]">delete_forever</span>
+                    <span>Permanently Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Payment Drawer Support */}
       <PaymentFormDrawer

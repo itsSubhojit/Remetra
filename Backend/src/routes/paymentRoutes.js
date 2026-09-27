@@ -1,10 +1,12 @@
 import { Router } from 'express'
 import { firebaseAuth } from '../middlewares/authMiddleware.js'
-import { paymentUser, getAllPayments, getPaymentId, updatePayment, deletePayment } from "../controllers/paymentController.js"
+import { paymentUser, getAllPayments, getPaymentId, updatePayment, deletePayment, deleteUserAccount } from "../controllers/paymentController.js"
 
 
 const router = Router()
 
+router.route("/account").delete(firebaseAuth, deleteUserAccount)
+router.route("/user/account").delete(firebaseAuth, deleteUserAccount)
 router.route("/").post(firebaseAuth, paymentUser)
 router.route("/").get(firebaseAuth, getAllPayments)
 router.route("/:id").get(firebaseAuth, getPaymentId)

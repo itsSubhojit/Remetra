@@ -102,3 +102,46 @@ export const deletePayment = asyncHandler(async (req, res, next) =>{
     )
 
 })
+
+export const deleteUserAccount = asyncHandler(async (req, res, next) => {
+    const firebaseUid = req.user?.uid;
+    if (!firebaseUid) {
+        throw new ApiError(401, "User ID not found in token!");
+    }
+
+    // Step 1: Delete all MongoDB payment records belonging to this Firebase UID
+    const dbDeleteResult = await Payment.deleteMany({ firebaseUid: firebaseUid });
+
+    // Step 2: Delete corresponding user from Firebase Authentication via Admin SDK
+    let firebaseDeleted = false;
+    let firebaseError = null;
+    try {
+        const { getAuth } = await import("firebase-admin/auth");
+        await getAuth().deleteUser(firebaseUid);
+        firebaseDeleted = true;
+    } catch (err) {
+        console.error(`Failed to delete Firebase Auth user ${firebaseUid}:`, err.message);
+        firebaseError = err.message;
+    }
+
+    if (!firebaseDeleted) {
+        return res.status(207).json(
+            new ApiResponse(
+                207,
+                "All payment records deleted from vault database, but Firebase user identity requires administrative cleanup.",
+                {
+                    deletedPaymentsCount: dbDeleteResult.deletedCount,
+                    firebaseDeleted: false,
+                    error: firebaseError
+                }
+            )
+        );
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, "Account and all associated payment data deleted successfully!", {
+            deletedPaymentsCount: dbDeleteResult.deletedCount,
+            firebaseDeleted: true
+        })
+    );
+})

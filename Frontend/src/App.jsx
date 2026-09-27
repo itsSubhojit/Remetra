@@ -8,6 +8,11 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SpendInsightsPage } from "./pages/SpendInsightsPage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { TermsPage } from "./pages/TermsPage";
+import { DisclaimerPage } from "./pages/DisclaimerPage";
+import { CookiePolicyPage } from "./pages/CookiePolicyPage";
+import { ContactPage } from "./pages/ContactPage";
 
 export default function App() {
   return (
@@ -19,6 +24,15 @@ export default function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/register" element={<Navigate to="/auth" replace />} />
+
+          {/* Legal & Information Routes */}
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/terms-of-service" element={<Navigate to="/terms" replace />} />
+          <Route path="/disclaimer" element={<DisclaimerPage />} />
+          <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Protected Routes */}
           <Route

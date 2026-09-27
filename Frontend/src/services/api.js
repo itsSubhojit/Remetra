@@ -57,6 +57,7 @@ export const paymentsApi = {
   create: (paymentData, token) => apiRequest("/api/payments", { method: "POST", body: paymentData, token }),
   update: (id, updatedFields, token) => apiRequest(`/api/payments/${id}`, { method: "PUT", body: updatedFields, token }),
   delete: (id, token) => apiRequest(`/api/payments/${id}`, { method: "DELETE", token }),
+  deleteAccount: (token) => apiRequest("/api/payments/account", { method: "DELETE", token }),
   markAsPaid: (id, token) => {
     return apiRequest(`/api/payments/${id}`, {
       method: "PUT",
@@ -67,4 +68,9 @@ export const paymentsApi = {
       token,
     });
   },
+  submitContactInquiry: (contactData) => apiRequest("/api/contact", { method: "POST", body: contactData }),
+};
+
+export const contactApi = {
+  submit: (contactData) => apiRequest("/api/contact", { method: "POST", body: contactData }),
 };

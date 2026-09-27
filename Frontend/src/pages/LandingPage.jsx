@@ -617,18 +617,23 @@ export const LandingPage = () => {
               </ul>
             </div>
             <div className="space-y-3">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold block">Access</span>
+              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold block">Legal &amp; Trust</span>
               <ul className="space-y-2 font-body-md text-body-md">
-                <li><Link className="text-on-surface-variant hover:text-on-surface transition-colors" to="/auth">Login to Vault</Link></li>
-                <li><Link className="text-on-surface-variant hover:text-on-surface transition-colors" to="/auth">Register Account</Link></li>
+                <li><Link className="text-on-surface-variant hover:text-on-surface transition-colors" to="/privacy-policy">Privacy Policy</Link></li>
+                <li><Link className="text-on-surface-variant hover:text-on-surface transition-colors" to="/terms">Terms of Service</Link></li>
+                <li><Link className="text-on-surface-variant hover:text-on-surface transition-colors" to="/disclaimer">Disclaimer</Link></li>
+                <li><Link className="text-on-surface-variant hover:text-on-surface transition-colors" to="/cookie-policy">Cookie Notice</Link></li>
+                <li><Link className="text-on-surface-variant hover:text-on-surface transition-colors" to="/contact">Support &amp; Grievance</Link></li>
               </ul>
             </div>
           </div>
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-body-sm text-body-sm text-outline">
             <div>© {new Date().getFullYear()} Remetra — Smart Bill Reminders &amp; Spend Insights. All rights reserved.</div>
-            <div className="flex items-center gap-6">
-              <span className="hover:text-on-surface">Security Policy</span>
-              <span className="hover:text-on-surface">Status Dashboard</span>
+            <div className="flex items-center gap-4 flex-wrap">
+              <Link className="hover:text-on-surface transition-colors" to="/privacy-policy">Privacy</Link>
+              <Link className="hover:text-on-surface transition-colors" to="/terms">Terms</Link>
+              <Link className="hover:text-on-surface transition-colors" to="/disclaimer">Disclaimer</Link>
+              <Link className="hover:text-on-surface transition-colors" to="/contact">Contact</Link>
             </div>
           </div>
         </div>
