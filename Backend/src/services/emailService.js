@@ -106,4 +106,61 @@ Notice: Reply directly to this email to respond to ${name} (${email}).
         text: textContent,
         html: htmlContent
     });
-};
+};
+
+/**
+ * Sends a 6-digit Email Verification OTP for new user registration.
+ */
+export const sendVerificationOtpEmail = async (to, otp) => {
+    const transporter = getTransporter();
+    const subject = `Your Remetra Verification Code is ${otp}`;
+
+    const textContent = `
+REMETRA HOUSEHOLD VAULT — EMAIL VERIFICATION
+------------------------------------------------
+Your 6-digit verification code is: ${otp}
+
+This code is valid for 10 minutes.
+For security reasons, do not share this code with anyone.
+
+If you did not request this code, please ignore this email.
+------------------------------------------------
+Remetra — Smart Bill Reminders & Spend Insights
+`.trim();
+
+    const htmlContent = `
+<div style="font-family: Arial, sans-serif; background-color: #0b0f17; color: #f1f5f9; padding: 32px 24px; border-radius: 16px; max-width: 540px; margin: 0 auto; border: 1px solid #1e293b;">
+  <div style="text-align: center; margin-bottom: 24px;">
+    <div style="display: inline-block; background: linear-gradient(135deg, #6366f1, #38bdf8); padding: 12px; border-radius: 14px; margin-bottom: 12px;">
+      <span style="color: #ffffff; font-size: 24px; font-weight: bold;">Remetra</span>
+    </div>
+    <h2 style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 8px 0 4px 0;">Verify Your Email Address</h2>
+    <p style="color: #94a3b8; font-size: 14px; margin: 0;">Use the code below to complete your Remetra account registration.</p>
+  </div>
+
+  <div style="background-color: #151d2a; border: 1px solid #334155; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+    <span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; display: block; margin-bottom: 8px;">Your 6-Digit Verification Code</span>
+    <div style="font-family: 'Courier New', monospace; font-size: 36px; font-weight: 800; color: #38bdf8; letter-spacing: 8px; margin: 8px 0;">${otp}</div>
+    <span style="font-size: 13px; color: #fbbf24; font-weight: 500; display: block; margin-top: 8px;">⏰ Valid for 10 minutes</span>
+  </div>
+
+  <div style="border-t: 1px solid #1e293b; padding-top: 16px; text-align: center;">
+    <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0;">
+      If you did not initiate this registration request, no action is needed. You can safely ignore this email.
+    </p>
+    <p style="font-size: 11px; color: #475569; margin-top: 16px;">
+      © ${new Date().getFullYear()} Remetra — Smart Bill Reminders & Spend Insights.
+    </p>
+  </div>
+</div>
+`.trim();
+
+    await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: to,
+        subject: subject,
+        text: textContent,
+        html: htmlContent,
+    });
+};
+

@@ -7,6 +7,7 @@ import "./src/config/firebase.js";
 import { errorHandler } from "./src/middlewares/errorHandler.js";
 import paymentRouter from "./src/routes/paymentRoutes.js"
 import contactRouter from "./src/routes/contactRoutes.js";
+import authRouter from "./src/routes/authRoutes.js";
 
 const app = express();
 
@@ -49,6 +50,8 @@ app.use("/api/payments", paymentRouter);
 app.use("/payments", paymentRouter);
 app.use("/api/contact", contactRouter);
 app.use("/contact", contactRouter);
+app.use("/api/auth", authRouter);
+app.use("/auth", authRouter);
 
 app.use(errorHandler);
 

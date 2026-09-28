@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { paymentsApi } from "../services/api";
 
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login"); // 'login' | 'register' | 'forgot'
@@ -22,6 +23,13 @@ export const AuthPage = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, text: "", color: "" });
 
+  // OTP Verification Modal State
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [otpInput, setOtpInput] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   // Reset form state
   const [resetEmail, setResetEmail] = useState("");
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -29,6 +37,17 @@ export const AuthPage = () => {
   // Status & error handling
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Cooldown timer for OTP resend
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const getFirebaseErrorMessage = (err) => {
     const code = err.code;
@@ -110,12 +129,58 @@ export const AuthPage = () => {
     }
     try {
       setLoading(true);
-      await register(regName, regEmail, regPassword);
-      navigate("/dashboard", { replace: true });
+      // Dispatch 6-digit verification OTP via Backend
+      await paymentsApi.sendRegistrationOtp(regEmail.trim());
+      setOtpInput("");
+      setOtpError("");
+      setIsOtpModalOpen(true);
+      setResendCooldown(60);
     } catch (err) {
-      setError(getFirebaseErrorMessage(err));
+      setError(err.message || getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isVerifyingOtp) return;
+    setOtpError("");
+    try {
+      setIsVerifyingOtp(true);
+      await paymentsApi.sendRegistrationOtp(regEmail.trim());
+      setResendCooldown(60);
+    } catch (err) {
+      setOtpError(err.message || "Failed to resend verification code.");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleVerifyOtpSubmit = async (e) => {
+    e.preventDefault();
+    setOtpError("");
+    const cleanOtp = otpInput.trim();
+    if (!cleanOtp) {
+      setOtpError("Please enter the 6-digit verification code.");
+      return;
+    }
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      setOtpError("Verification code must be exactly 6 numeric digits.");
+      return;
+    }
+    try {
+      setIsVerifyingOtp(true);
+      // 1. Verify OTP with Backend & acquire verification token proof
+      await paymentsApi.verifyRegistrationOtp(regEmail.trim(), cleanOtp);
+      
+      // 2. Complete Firebase account registration only after verified proof
+      await register(regName, regEmail.trim(), regPassword);
+      setIsOtpModalOpen(false);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setOtpError(err.message || getFirebaseErrorMessage(err));
+    } finally {
+      setIsVerifyingOtp(false);
     }
   };
 
@@ -761,6 +826,96 @@ export const AuthPage = () => {
           </div>
         </div>
       </main>
+
+      {/* NEW USER EMAIL VERIFICATION OTP MODAL */}
+      {isOtpModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-[#151D2A] border border-[#38BDF8]/40 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#6366F1] to-[#38BDF8] flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-500/20">
+                <span className="material-symbols-outlined text-[24px]">mark_email_read</span>
+              </div>
+              <div className="space-y-1 min-w-0 flex-1">
+                <h3 className="text-headline-sm font-bold text-on-surface tracking-tight">Verify Your Email</h3>
+                <p className="text-body-sm text-on-surface-variant leading-relaxed">
+                  We dispatched a 6-digit verification code to <strong className="text-primary font-mono font-semibold break-all">{regEmail}</strong>.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleVerifyOtpSubmit} className="space-y-4">
+              {otpError && (
+                <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-body-sm flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-[18px] text-red-400 shrink-0 mt-0.5">error</span>
+                  <span>{otpError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-label-md font-semibold text-on-surface mb-2 text-center">
+                  Enter 6-Digit Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  disabled={isVerifyingOtp}
+                  className="w-full text-center font-mono font-extrabold text-headline-md tracking-[0.4em] py-3 px-4 bg-[#0B0F17] border border-outline-variant/60 focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8] rounded-xl text-on-surface placeholder:text-outline/30 outline-none transition"
+                  autoFocus
+                />
+                <span className="block text-center text-xs text-outline mt-1.5">
+                  ⏰ Code expires in 10 minutes
+                </span>
+              </div>
+
+              <div className="space-y-2.5 pt-2">
+                <button
+                  type="submit"
+                  disabled={isVerifyingOtp || otpInput.trim().length !== 6}
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#38BDF8] text-white font-label-lg font-bold hover:opacity-95 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2"
+                >
+                  {isVerifyingOtp ? (
+                    <>
+                      <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                      <span>Verifying &amp; Registering...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                      <span>Verify &amp; Create Account</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center justify-between pt-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={resendCooldown > 0 || isVerifyingOtp}
+                    className="text-primary hover:underline disabled:opacity-50 disabled:no-underline font-semibold flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">refresh</span>
+                    <span>
+                      {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend Verification Code"}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsOtpModalOpen(false)}
+                    disabled={isVerifyingOtp}
+                    className="text-outline hover:text-on-surface font-semibold"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

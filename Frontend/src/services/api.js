@@ -69,8 +69,17 @@ export const paymentsApi = {
     });
   },
   submitContactInquiry: (contactData) => apiRequest("/api/contact", { method: "POST", body: contactData }),
+  sendRegistrationOtp: (email) => apiRequest("/api/auth/send-registration-otp", { method: "POST", body: { email } }),
+  verifyRegistrationOtp: (email, otp) => apiRequest("/api/auth/verify-registration-otp", { method: "POST", body: { email, otp } }),
+  verifyEmailToken: (email, verificationToken) => apiRequest("/api/auth/verify-email-token", { method: "POST", body: { email, verificationToken } }),
 };
 
 export const contactApi = {
   submit: (contactData) => apiRequest("/api/contact", { method: "POST", body: contactData }),
+};
+
+export const authApi = {
+  sendRegistrationOtp: (email) => apiRequest("/api/auth/send-registration-otp", { method: "POST", body: { email } }),
+  verifyRegistrationOtp: (email, otp) => apiRequest("/api/auth/verify-registration-otp", { method: "POST", body: { email, otp } }),
+  verifyEmailToken: (email, verificationToken) => apiRequest("/api/auth/verify-email-token", { method: "POST", body: { email, verificationToken } }),
 };
