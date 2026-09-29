@@ -12,7 +12,10 @@ const getTransporter = () => {
   }
 
   return nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    family: 4,
     auth: {
       user,
       pass,
@@ -113,7 +116,7 @@ Notice: Reply directly to this email to respond to ${name} (${email}).
  */
 export const sendVerificationOtpEmail = async (to, otp) => {
     const transporter = getTransporter();
-    const subject = `Your Remetra Verification Code is ${otp}`;
+    const subject = "Your Remetra Email Verification Code";
 
     const textContent = `
 REMETRA HOUSEHOLD VAULT — EMAIL VERIFICATION
@@ -163,4 +166,4 @@ Remetra — Smart Bill Reminders & Spend Insights
         html: htmlContent,
     });
 };
-
+
