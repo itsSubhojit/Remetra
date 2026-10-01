@@ -2,6 +2,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {Payment} from "../models/Payment.model.js"
+import { createCashfreeOrder } from "../services/cashfreeService.js"
 
 
 export const paymentUser = asyncHandler(async (req, res, next) =>{
@@ -144,4 +145,44 @@ export const deleteUserAccount = asyncHandler(async (req, res, next) => {
             firebaseDeleted: true
         })
     );
+})
+
+export const initiatePayment = asyncHandler(async(req, res, next) =>{
+        const id = req.params.id
+        const firebaseUid = req.user.uid
+
+        const payment = await Payment.findOne({_id: id, firebaseUid: firebaseUid})
+        if(!payment){
+            throw new ApiError(404, "Payment not found!")
+        }
+
+        if(payment.status === "Paid"){
+            throw new ApiError(400, "Payment Already Had Done...")
+        }
+
+
+        const { getAuth } = await import("firebase-admin/auth");
+        const firebaseUser = await getAuth().getUser(payment.firebaseUid);
+
+        const customerDetails = {
+            customer_id: firebaseUser.uid,
+            customer_email: firebaseUser.email,
+            customer_phone: payment.mobileNumber
+        }
+
+        const orderId = payment._id.toString()
+        const orderAmount = payment.amount
+        const orderCurrency = "INR"
+
+        const cashfreeOrder = await createCashfreeOrder(
+           orderId,
+           orderAmount,
+           orderCurrency,
+           customerDetails
+    )
+
+        return res.status(200)
+        .json(
+            new ApiResponse(200, "Order Created Successfully", cashfreeOrder)
+        )
 })
