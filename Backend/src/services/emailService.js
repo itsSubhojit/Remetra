@@ -1,72 +1,74 @@
 import dotenv from "dotenv";
 dotenv.config();
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-// Helper function to create/get transporter dynamically with current env vars
-const getTransporter = () => {
-  const user = (process.env.EMAIL_USER || "").trim();
-  const pass = (process.env.EMAIL_PASS || "").trim();
-
-  if (!user || !pass) {
-    throw new Error("SMTP authentication credentials (EMAIL_USER / EMAIL_PASS) are missing or empty on backend.");
+// Helper function to create/get Resend client dynamically with current env vars
+const getResendClient = () => {
+  const apiKey = (process.env.RESEND_API_KEY || "").trim();
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is missing or empty in environment configuration.");
   }
-
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    family: 4,
-    auth: {
-      user,
-      pass,
-    },
-  });
+  return new Resend(apiKey);
 };
 
+// Helper function to resolve sender address
+const getFromAddress = () => {
+  return (process.env.RESEND_FROM_EMAIL || "Remetra <onboarding@resend.dev>").trim();
+};
+
+/**
+ * Sends automated payment reminder emails to the user.
+ * Throws an error on failure so caller does not falsely mark reminder as sent.
+ */
 export const sendReminderEmail = async (to, subject, message) => {
-    try {
-        const transporter = getTransporter();
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: to,
-            subject: subject,
-            text: message
-        })
-    } catch (error) {
-        console.log("Email sending failed:", error)
-    }
-}
+  const resend = getResendClient();
+  const from = getFromAddress();
+
+  const { data, error } = await resend.emails.send({
+    from,
+    to: [to],
+    subject,
+    text: message,
+  });
+
+  if (error) {
+    console.error("Reminder email dispatch failed via Resend:", error.message || error);
+    throw new Error(`Reminder email dispatch failed: ${error.message || "Unknown Resend error"}`);
+  }
+
+  return data;
+};
 
 /**
  * Sends public contact / privacy / grievance inquiry emails to configured contact address.
  */
 export const sendContactInquiryEmail = async ({ category, name, email, message }) => {
-    const recipient = process.env.CONTACT_EMAIL || process.env.EMAIL_USER;
+  const recipient = (process.env.CONTACT_EMAIL || process.env.EMAIL_USER || "").trim();
 
-    if (!recipient) {
-        throw new Error("Target contact email configuration is missing on server.");
-    }
+  if (!recipient) {
+    throw new Error("Target contact email configuration is missing on server.");
+  }
 
-    const categoryLabels = {
-        support: "General Technical Support",
-        privacy: "Privacy & Data Erasure Request",
-        grievance: "Formal Grievance Escalation"
-    };
+  const categoryLabels = {
+    support: "General Technical Support",
+    privacy: "Privacy & Data Erasure Request",
+    grievance: "Formal Grievance Escalation",
+  };
 
-    const categoryText = categoryLabels[category] || category || "General Support";
-    const timestamp = new Date().toUTCString();
+  const categoryText = categoryLabels[category] || category || "General Support";
+  const timestamp = new Date().toUTCString();
 
-    const escapeHtml = (str) =>
-        String(str || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+  const escapeHtml = (str) =>
+    String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
 
-    const subject = `[Remetra Inquiry - ${categoryText}] From ${name}`;
+  const subject = `[Remetra Inquiry - ${categoryText}] From ${name}`;
 
-    const textContent = `
+  const textContent = `
 NEW INQUIRY RECEIVED — REMETRA SUPPORT PORTAL
 ------------------------------------------------
 Category: ${categoryText}
@@ -81,7 +83,7 @@ ${message}
 Notice: Reply directly to this email to respond to ${name} (${email}).
 `.trim();
 
-    const htmlContent = `
+  const htmlContent = `
 <div style="font-family: Arial, sans-serif; background-color: #0b0f17; color: #f1f5f9; padding: 24px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #1e293b;">
   <h2 style="color: #6366f1; margin-top: 0;">New Support Inquiry Received</h2>
   <div style="background-color: #151d2a; padding: 16px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 20px;">
@@ -100,25 +102,35 @@ Notice: Reply directly to this email to respond to ${name} (${email}).
 </div>
 `.trim();
 
-    const transporter = getTransporter();
-    await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        replyTo: email,
-        to: recipient,
-        subject: subject,
-        text: textContent,
-        html: htmlContent
-    });
+  const resend = getResendClient();
+  const from = getFromAddress();
+
+  const { data, error } = await resend.emails.send({
+    from,
+    to: [recipient],
+    reply_to: email,
+    subject,
+    text: textContent,
+    html: htmlContent,
+  });
+
+  if (error) {
+    console.error("Contact inquiry dispatch failed via Resend:", error.message || error);
+    throw new Error(`Contact inquiry dispatch failed: ${error.message || "Unknown Resend error"}`);
+  }
+
+  return data;
 };
 
 /**
- * Sends a 6-digit Email Verification OTP for new user registration.
+ * Sends a 6-digit Email Verification OTP for new user registration via Resend.
  */
 export const sendVerificationOtpEmail = async (to, otp) => {
-    const transporter = getTransporter();
-    const subject = "Your Remetra Email Verification Code";
+  const resend = getResendClient();
+  const from = getFromAddress();
+  const subject = "Your Remetra Email Verification Code";
 
-    const textContent = `
+  const textContent = `
 REMETRA HOUSEHOLD VAULT — EMAIL VERIFICATION
 ------------------------------------------------
 Your 6-digit verification code is: ${otp}
@@ -131,7 +143,7 @@ If you did not request this code, please ignore this email.
 Remetra — Smart Bill Reminders & Spend Insights
 `.trim();
 
-    const htmlContent = `
+  const htmlContent = `
 <div style="font-family: Arial, sans-serif; background-color: #0b0f17; color: #f1f5f9; padding: 32px 24px; border-radius: 16px; max-width: 540px; margin: 0 auto; border: 1px solid #1e293b;">
   <div style="text-align: center; margin-bottom: 24px;">
     <div style="display: inline-block; background: linear-gradient(135deg, #6366f1, #38bdf8); padding: 12px; border-radius: 14px; margin-bottom: 12px;">
@@ -158,12 +170,18 @@ Remetra — Smart Bill Reminders & Spend Insights
 </div>
 `.trim();
 
-    await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: to,
-        subject: subject,
-        text: textContent,
-        html: htmlContent,
-    });
-};
+  const { data, error } = await resend.emails.send({
+    from,
+    to: [to],
+    subject,
+    text: textContent,
+    html: htmlContent,
+  });
 
+  if (error) {
+    console.error("Verification OTP dispatch failed via Resend:", error.message || error);
+    throw new Error(`Verification OTP dispatch failed: ${error.message || "Unknown Resend error"}`);
+  }
+
+  return data;
+};
