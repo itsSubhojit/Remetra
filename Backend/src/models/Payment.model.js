@@ -71,6 +71,15 @@ const paymentSchema = new Schema(
         reminderSent:{
             type:Boolean,
             default:false
+        },
+        cashfreeOrderId: {
+            type: String,
+            default: null,
+            index: true
+        },
+        cashfreeOrders: {
+            type: [String],
+            default: []
         }
     }, 
     {timestamps: true})

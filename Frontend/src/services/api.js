@@ -58,6 +58,8 @@ export const paymentsApi = {
   update: (id, updatedFields, token) => apiRequest(`/api/payments/${id}`, { method: "PUT", body: updatedFields, token }),
   delete: (id, token) => apiRequest(`/api/payments/${id}`, { method: "DELETE", token }),
   deleteAccount: (token) => apiRequest("/api/payments/account", { method: "DELETE", token }),
+  initiatePayment: (id, token) => apiRequest(`/api/payments/${id}/pay`, { method: "POST", token }),
+  verifyPayment: (id, token) => apiRequest(`/api/payments/${id}/verify-payment`, { method: "GET", token }),
   markAsPaid: (id, token) => {
     return apiRequest(`/api/payments/${id}`, {
       method: "PUT",

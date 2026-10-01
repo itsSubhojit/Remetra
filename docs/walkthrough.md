@@ -273,4 +273,167 @@ VITE_FIREBASE_APP_ID=your-app-id
 
 ---
 
+## 8. CASHFREE SANDBOX FRONTEND CHECKOUT
+
+### A. Metadata
+- **Date of Implementation**: October 1, 2026
+- **Objective**: Implement secure Cashfree Sandbox Checkout on the Remetra frontend when users click "Pay Now" on bills and recurring commitments, integrating with the backend order creation pipeline while strictly preserving authentication and credential boundaries.
+
+### B. Existing Backend Functionality Reused
+- **Route**: `POST /api/payments/:id/pay` in `Backend/src/routes/paymentRoutes.js`.
+- **Controller**: `initiatePayment` in `Backend/src/controllers/paymentController.js`.
+- **Service**: `createCashfreeOrder` in `Backend/src/services/cashfreeService.js`.
+- **SDK**: `cashfree-pg` (v6.0.6) on the backend using sandbox environment (`Cashfree.SANDBOX`).
+- **Enhancements Made**:
+  1. Guaranteed 10-digit customer phone number fallback (`payment.mobileNumber || firebaseUser.phoneNumber || "9999999999"`) ensuring non-recharge bills (Electricity, Subscriptions) do not fail with HTTP 400 Bad Request.
+  2. Dynamically generated unique order ID (`order_${payment._id}_${Date.now()}`) to allow repeated checkout attempts on unpaid bills without encountering Cashfree's HTTP 409 Conflict (`order_already_exists`).
+
+### C. Frontend Files Modified & Added
+- `Frontend/package.json` & `Frontend/package-lock.json`: Added official client-side package `@cashfreepayments/cashfree-js` (`^1.0.7`).
+- `Frontend/src/services/cashfree.js` *(New)*: Singleton Cashfree JS SDK loader in sandbox mode (`load({ mode: "sandbox" })`) and modal checkout orchestrator `openCashfreeCheckout(paymentSessionId, "_modal")`.
+- `Frontend/src/services/api.js`: Added `paymentsApi.initiatePayment(id, token)` which dispatches `POST /api/payments/:id/pay` with Firebase JWT Bearer token.
+- `Frontend/src/components/Modals/PaymentDetailsModal.jsx`: Added primary "Pay Now (Sandbox)" action button with loading spinner state for unpaid bills (`payment.status !== "Paid"`).
+- `Frontend/src/pages/PaymentsPage.jsx`: Added "Pay Now" buttons in desktop payments table and mobile stacked cards, single-click debounce lock (`payingPaymentId`), error banner, and checkout completion notification.
+- `Frontend/src/pages/DashboardPage.jsx`: Added "Pay Now" action buttons in the recent payments desktop table, mobile cards, and connected `PaymentDetailsModal`.
+
+### D. Cashfree SDK / Package Used
+- **Frontend SDK**: `@cashfreepayments/cashfree-js` (v1.0.7) - official client-side Web Checkout SDK by Cashfree Payments.
+- **Backend SDK**: `cashfree-pg` (v6.0.6) - official backend Node.js SDK by Cashfree Payments.
+
+### E. API Endpoint Used
+- **Endpoint**: `POST /api/payments/:id/pay`
+- **Headers**: `Authorization: Bearer <Firebase_ID_Token>`, `Content-Type: application/json`
+- **Response**: `{ statusCode: 200, data: { order_id, payment_session_id, order_status, ... }, message: "Order Created Successfully", success: true }`
+
+### F. Checkout & Authentication Flow
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 Remetra User
+    participant Frontend as 💻 Remetra React Client
+    participant AuthContext as 🔐 Firebase Auth
+    participant Backend as ⚡ Express Backend API
+    participant CashfreeAPI as 🌐 Cashfree Sandbox Gateway
+    participant CashfreeModal as 💳 Cashfree Web Checkout
+
+    User->>Frontend: Clicks "Pay Now" on unpaid bill
+    Frontend->>Frontend: Sets single-click lock & spinner state
+    Frontend->>AuthContext: Retrieves active Firebase ID Token
+    Frontend->>Backend: POST /api/payments/:id/pay (Bearer Token)
+    Backend->>Backend: verifyToken middleware validates Firebase JWT
+    Backend->>Backend: Verifies payment ownership & unpaid status
+    Backend->>CashfreeAPI: PGCreateOrder(orderId, amount, customerDetails)
+    CashfreeAPI-->>Backend: Returns payment_session_id & order details
+    Backend-->>Frontend: 200 OK with payment_session_id
+    Frontend->>CashfreeModal: cashfree.checkout({ paymentSessionId, redirectTarget: "_modal" })
+    CashfreeModal-->>User: Displays interactive Cashfree Sandbox checkout popup
+    User->>CashfreeModal: Interacts / Closes / Pays in Sandbox
+    CashfreeModal-->>Frontend: Resolves checkout promise on modal dismissal
+    Frontend->>Frontend: Releases lock & displays completion notice
+```
+
+### G. Security Considerations
+- **Backend-Only Secrets**: `CASHFREE_SECRET_KEY` resides strictly in backend environment variables and is never referenced, packaged, or transmitted to the frontend.
+- **Vite Cleanliness**: No Cashfree credentials are exposed via `VITE_` frontend variables.
+- **Stateless Session Token**: Client receives only the short-lived `payment_session_id`.
+- **No Client Trust for Status**: Frontend does NOT update payment status to "Paid" based on client callbacks.
+- **JWT Protection**: Endpoint is protected by Firebase Admin token verification on the backend.
+
+### H. Testing Performed
+1. **Direct Backend Cashfree Sandbox Test**: Verified order creation with `cashfreeService.js` against Cashfree Sandbox API, successfully generating `payment_session_id` (`order_status: ACTIVE`).
+2. **Frontend Build Verification**: Ran `npm run build` with Vite/Rolldown, producing production bundles cleanly in 2.37s with 0 errors.
+3. **Frontend Code Quality Check**: Ran `npm run lint` with Oxlint, confirming 0 errors across 26 files.
+4. **Backend Syntax Verification**: Tested imports of `paymentController.js`, `cashfreeService.js`, and `paymentRoutes.js` confirming error-free module resolution.
+5. **Reconciliation Integration Test**: Verified persistent mapping, historical retry matching, SDK HMAC-SHA256 signature validation, and idempotent database status transitions.
+6. **Security Scan**: Verified that no `CASHFREE_SECRET_KEY` or credentials exist in the client repository.
+
+### I. Current Status & Implementation Summary
+
+| Component / Feature | Status | Notes |
+| :--- | :---: | :--- |
+| Backend Sandbox Order Creation | ✅ COMPLETED | Created via Cashfree SDK, returns `payment_session_id` |
+| Persistent Order ID Mapping | ✅ COMPLETED | Maps `cashfreeOrderId` & `cashfreeOrders` audit array |
+| Client-Side Cashfree Web SDK | ✅ COMPLETED | `@cashfreepayments/cashfree-js` v1.0.7 loaded in sandbox mode |
+| "Pay Now" UI in Payments Table | ✅ COMPLETED | Desktop table action with loading state & single-click lock |
+| "Pay Now" UI in Mobile Cards | ✅ COMPLETED | Stacked cards action for touch devices |
+| "Pay Now" UI in Payment Details Modal | ✅ COMPLETED | Prominent action in modal footer |
+| "Pay Now" UI in Dashboard Table & Cards | ✅ COMPLETED | Integrated into dashboard recent obligations |
+| Security Boundary & Secret Isolation | ✅ COMPLETED | Secrets remain strictly on the backend |
+| Backend Payment Verification Endpoint | ✅ COMPLETED | `GET /api/payments/:id/verify-payment` queries Cashfree & reconciles MongoDB |
+| Cashfree Webhook Handler | ✅ COMPLETED | `POST /api/payments/webhook` with HMAC-SHA256 signature verification |
+| Frontend Verification Trigger & Refresh | ✅ COMPLETED | Triggered upon checkout closure to immediately update UI to "Paid" |
+| Manual Offline Mark Paid | ✅ PRESERVED | Preserved for non-gateway offline settlements |
+
+---
+
+## 10. Cashfree Payment Reconciliation & Webhook Architecture
+
+### A. Dual Reconciliation Strategy
+Remetra employs a defense-in-depth dual reconciliation architecture where both synchronous verification and asynchronous webhooks converge onto an idempotent database update:
+
+```mermaid
+flowchart TD
+    subgraph Client ["💻 Client Tier"]
+        Checkout["Cashfree Web Checkout"]
+        FrontendVerify["GET /api/payments/:id/verify-payment"]
+    end
+
+    subgraph CashfreeGateway ["🌐 Cashfree Sandbox"]
+        OrderRecord[("Cashfree Order & Payments")]
+        WebhookDispatch["Webhook Dispatcher"]
+    end
+
+    subgraph Backend ["⚡ Express API Backend"]
+        VerifyHandler["verifyPayment Controller\n(Firebase JWT Protected)"]
+        WebhookHandler["handleCashfreeWebhook Controller\n(HMAC-SHA256 Protected)"]
+        RawBodyBuffer["Express Raw Body Buffer"]
+        SignatureCheck["cf.PGVerifyWebhookSignature()"]
+    end
+
+    subgraph Database ["🍃 MongoDB Atlas"]
+        PaymentDoc[("Payment Document\nstatus='Paid'\npaidDate=timestamp")]
+    end
+
+    Checkout -->|Modal Closes| FrontendVerify
+    FrontendVerify -->|Authenticated Request| VerifyHandler
+    VerifyHandler -->|Fetch Payment Details| OrderRecord
+    OrderRecord -->|Order Status: PAID / SUCCESS| VerifyHandler
+    VerifyHandler -->|Idempotent Update| PaymentDoc
+
+    WebhookDispatch -->|POST /api/payments/webhook| RawBodyBuffer
+    RawBodyBuffer --> WebhookHandler
+    WebhookHandler --> SignatureCheck
+    SignatureCheck -->|Valid Signature| WebhookHandler
+    WebhookHandler -->|Idempotent Update| PaymentDoc
+```
+
+### B. Persistent Order ID Mapping & Retry Safety
+- **Order Generation**: Every attempt generates `order_<paymentId>_<timestamp>`.
+- **Database Schema**:
+  - `cashfreeOrderId`: Stores the active/latest Cashfree order ID.
+  - `cashfreeOrders`: Stores an array of all historically attempted Cashfree order IDs for this payment.
+- **Lookup Resilience**: Webhooks and verification look up records using:
+  ```javascript
+  {
+    $or: [
+      { cashfreeOrderId: orderId },
+      { cashfreeOrders: orderId }
+    ]
+  }
+  ```
+  This ensures that even if a network delay causes an older retry webhook to arrive, the system safely identifies the correct payment commitment without misattributing funds.
+
+### C. Webhook Signature Verification & Raw Body Handling
+- **Middleware**: Express mounts `express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString(); } })`.
+- **Headers**: Webhook extracts `x-webhook-signature` and `x-webhook-timestamp`.
+- **Verification**: Signature is validated using `cashfree.PGVerifyWebhookSignature(signature, req.rawBody, timestamp)` against the backend-only `CASHFREE_SECRET_KEY`. Any tampered payload or invalid signature immediately returns HTTP 400 Bad Request.
+
+### D. Idempotency Safeguards
+Both `verifyPayment` and `handleCashfreeWebhook` check if `payment.status === "Paid"`:
+- If already Paid, the endpoint returns an HTTP 200 acknowledgment without re-writing `paidDate` or duplicating transaction records.
+- Validation checks currency (`INR`) and verifies the settled amount against the database record before committing `status = "Paid"`.
+
+---
+
 *Report Generated for Remetra Project codebase.*
+

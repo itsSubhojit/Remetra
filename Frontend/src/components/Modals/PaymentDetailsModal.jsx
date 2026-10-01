@@ -1,6 +1,6 @@
 import React from "react";
 
-export const PaymentDetailsModal = ({ isOpen, onClose, onEdit, payment }) => {
+export const PaymentDetailsModal = ({ isOpen, onClose, onEdit, payment, onPayNow, isPaying = false }) => {
   if (!isOpen || !payment) return null;
 
   const getStatusBadge = (status) => {
@@ -126,7 +126,7 @@ export const PaymentDetailsModal = ({ isOpen, onClose, onEdit, payment }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
@@ -140,10 +140,30 @@ export const PaymentDetailsModal = ({ isOpen, onClose, onEdit, payment }) => {
               onClose();
               onEdit(payment);
             }}
-            className="px-4 py-2 bg-primary-container text-on-primary rounded-xl text-label-md font-label-md hover:opacity-95 transition-all shadow-md shadow-primary-container/20"
+            className="px-4 py-2 border border-outline-variant hover:bg-surface-container text-on-surface rounded-xl text-label-md font-label-md transition-colors"
           >
             Edit Payment
           </button>
+          {payment.status !== "Paid" && onPayNow && (
+            <button
+              type="button"
+              disabled={isPaying}
+              onClick={() => onPayNow(payment._id)}
+              className="px-4 py-2 bg-gradient-to-r from-primary to-indigo-500 hover:from-primary/90 hover:to-indigo-500/90 text-white rounded-xl text-label-md font-label-md font-semibold transition-all shadow-md shadow-primary/20 flex items-center gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPaying ? (
+                <>
+                  <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                  <span>Opening Checkout...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[18px]">payments</span>
+                  <span>Pay Now (Sandbox)</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

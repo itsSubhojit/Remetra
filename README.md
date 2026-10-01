@@ -186,8 +186,74 @@ All `/api/payments` endpoints require an `Authorization: Bearer <Firebase_Token>
 | `GET` | `/api/payments` | Retrieve all payments for the authenticated user |
 | `GET` | `/api/payments/:id` | Get single payment details by ID |
 | `POST` | `/api/payments` | Create a new payment commitment |
+| `POST` | `/api/payments/:id/pay` | Create Cashfree Sandbox order, persist `cashfreeOrderId`, and return session ID |
+| `GET` | `/api/payments/:id/verify-payment` | Verify payment status with Cashfree and update Remetra payment to Paid (Authenticated) |
+| `POST` | `/api/payments/webhook` | Cashfree webhook listener with raw body HMAC-SHA256 signature verification (Public) |
 | `PUT` | `/api/payments/:id` | Update an existing payment |
 | `DELETE` | `/api/payments/:id` | Delete a payment record |
+
+---
+
+## 💳 Cashfree Sandbox Payment Gateway
+
+Remetra integrates with the **Cashfree Payment Gateway Sandbox** to enable simulated in-app digital bill settlements with automated verification and webhook reconciliation.
+
+### Payment Architecture & Flow
+```
+Remetra Frontend (React)
+      ↓ (1. User clicks "Pay Now")
+POST /api/payments/:id/pay (with Firebase JWT)
+      ↓ (2. Authenticated Order Request)
+Remetra Express Backend
+      ↓ (3. PGCreateOrder via Cashfree SDK)
+      ↓ (4. Persist cashfreeOrderId & cashfreeOrders array in MongoDB)
+Cashfree Sandbox API
+      ↓ (5. Returns payment_session_id)
+Remetra Frontend (Cashfree JS SDK)
+      ↓ (6. cashfree.checkout({ redirectTarget: "_modal" }))
+Cashfree Web Checkout Popup
+      ↓ (7. User completes sandbox payment in modal)
+Checkout Closes
+      ↓ (8. Dual Reconciliation Paths)
+   ┌───────────────────────────────────────────┐
+   │                                           │
+   ▼ (Path A: Synchronous Verification)         ▼ (Path B: Asynchronous Webhook)
+Frontend calls GET /:id/verify-payment      Cashfree calls POST /api/payments/webhook
+   │                                           │
+   │ (Firebase Bearer Token validated)         │ (Raw body HMAC-SHA256 verified)
+   ▼                                           ▼
+Remetra Backend queries Cashfree API        Remetra Backend unpacks PAYMENT_SUCCESS
+   │                                           │
+   ▼                                           ▼
+Validates Amount & Currency (INR)           Validates mapped order ID & amount
+   │                                           │
+   └─────────────────────┬─────────────────────┘
+                         │
+                         ▼
+             MongoDB Payment Document
+           status = "Paid", paidDate = now
+                         │
+                         ▼
+               Frontend Auto-Refresh
+```
+
+### Key Security & Architecture Principles
+- **Backend-Only Secrets**: `CASHFREE_SECRET_KEY` remains strictly on the Express backend server and is **never** shared with or bundled into the Vite frontend.
+- **Client Session Token**: The frontend only receives the temporary `payment_session_id` required by `@cashfreepayments/cashfree-js` to render the checkout popup.
+- **Persistent Order Mapping & Retry Safety**: Every payment attempt generates a unique `order_<paymentId>_<timestamp>` which is persisted to `cashfreeOrderId` as well as an audit array `cashfreeOrders` in MongoDB.
+- **No Client-Side Status Trust**: Closing or completing the frontend checkout does **not** directly mark MongoDB payments as "Paid". Full settlement reconciliation requires backend Cashfree verification or webhook.
+- **Raw Body HMAC-SHA256 Webhook Verification**: `POST /api/payments/webhook` verifies `x-webhook-signature` using the raw unparsed request buffer, timestamp, and client secret via official Cashfree SDK.
+- **Strict Idempotency**: Repeated webhooks or verification calls safely verify existing `Paid` status without creating duplicate payments or corrupting `paidDate`.
+- **Preserved Offline Settlements**: Manual "Mark Paid" functionality remains available for external cash or banking transactions.
+
+### Implementation Status
+- ✅ **COMPLETED**: Backend Cashfree Sandbox Order Creation (`POST /api/payments/:id/pay`)
+- ✅ **COMPLETED**: Persistent Order ID Mapping (`cashfreeOrderId`, `cashfreeOrders`)
+- ✅ **COMPLETED**: Frontend Cashfree JS SDK Modal Checkout Integration (`@cashfreepayments/cashfree-js`)
+- ✅ **COMPLETED**: "Pay Now" actions across Payments Table, Mobile Cards, and Payment Details Modal
+- ✅ **COMPLETED**: Backend Payment Verification Endpoint (`GET /api/payments/:id/verify-payment`)
+- ✅ **COMPLETED**: Cashfree Webhook Handler with HMAC-SHA256 verification (`POST /api/payments/webhook`)
+- ✅ **COMPLETED**: Frontend post-checkout verification trigger and automatic state refresh
 
 ---
 
@@ -197,15 +263,20 @@ All `/api/payments` endpoints require an `Authorization: Bearer <Firebase_Token>
 - Node.js (v18+)
 - MongoDB Atlas cluster URL
 - Firebase Project with Email/Password Auth enabled
-- Gmail Account with App Password (for email reminders)
+- Cashfree Merchant Sandbox Account (for App ID & Secret Key)
+- Resend API Key (for transactional email reminders and OTP verification)
 
 ### 2. Backend Environment Variables (`Backend/.env`)
 ```env
 PORT=5000
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/remetra
 FIREBASE_SERVICE_ACCOUNT_PATH=./src/config/serviceAccountKey.json
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-gmail-app-password
+RESEND_API_KEY=re_your_resend_api_key
+
+# Cashfree Sandbox Credentials (Backend-Only)
+CASHFREE_APP_ID=your_cashfree_sandbox_app_id
+CASHFREE_SECRET_KEY=your_cashfree_sandbox_secret_key
+CLIENT_URL=http://localhost:5173
 ```
 
 ### 3. Frontend Environment Variables (`Frontend/.env`)

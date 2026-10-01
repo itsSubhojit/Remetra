@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { paymentsApi } from "../services/api";
+import { openCashfreeCheckout } from "../services/cashfree";
 import { Sidebar } from "../components/Navigation/Sidebar";
 import { PaymentFormDrawer } from "../components/Modals/PaymentFormDrawer";
 import { PaymentDetailsModal } from "../components/Modals/PaymentDetailsModal";
@@ -25,6 +26,8 @@ export const PaymentsPage = () => {
   const [detailsPayment, setDetailsPayment] = useState(null);
   const [deletingPayment, setDeletingPayment] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [payingPaymentId, setPayingPaymentId] = useState(null);
+  const [checkoutNotice, setCheckoutNotice] = useState(null);
 
   const fetchPayments = async () => {
     try {
@@ -48,6 +51,72 @@ export const PaymentsPage = () => {
   useEffect(() => {
     fetchPayments();
   }, []);
+
+  // Cashfree Checkout Action
+  const handlePayNow = async (paymentId) => {
+    if (payingPaymentId) return; // Prevent duplicate clicks
+    try {
+      setPayingPaymentId(paymentId);
+      setCheckoutNotice(null);
+
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Authentication required. Please log in again.");
+      }
+
+      // Step 1: Request Cashfree order creation from backend
+      const res = await paymentsApi.initiatePayment(paymentId, token);
+      const paymentSessionId = res?.data?.payment_session_id;
+
+      if (!paymentSessionId) {
+        throw new Error("Unable to retrieve payment_session_id from server response.");
+      }
+
+      // Step 2: Open Cashfree Sandbox modal checkout
+      await openCashfreeCheckout(paymentSessionId, "_modal");
+
+      // Step 3: Trigger Backend Verification to securely query Cashfree and reconcile status
+      setCheckoutNotice({
+        type: "info",
+        title: "Verifying Payment...",
+        message: "Securely verifying transaction status with Cashfree Payment Gateway...",
+      });
+
+      const verifyRes = await paymentsApi.verifyPayment(paymentId, token);
+      const isPaid = verifyRes?.data?.status === "Paid" || verifyRes?.data?.verified;
+
+      if (isPaid) {
+        setCheckoutNotice({
+          type: "success",
+          title: "Payment Verified & Settled!",
+          message: "Cashfree confirmed this transaction. The bill is now officially settled in your vault.",
+        });
+        await fetchPayments();
+      } else if (verifyRes?.data?.status === "Pending") {
+        setCheckoutNotice({
+          type: "info",
+          title: "Payment Processing",
+          message: "Your payment is currently processing with your banking provider. Status will update once confirmed.",
+        });
+        await fetchPayments();
+      } else {
+        setCheckoutNotice({
+          type: "info",
+          title: "Checkout Window Closed",
+          message: "Payment was not completed. The bill remains in your pending obligations.",
+        });
+      }
+    } catch (err) {
+      console.error("Cashfree Checkout / Verification error:", err);
+      setCheckoutNotice({
+        type: "error",
+        title: "Payment Verification Notice",
+        message: err.message || "Failed to complete payment verification.",
+      });
+    } finally {
+      setPayingPaymentId(null);
+    }
+  };
 
   // CRUD Actions
   const handleSavePayment = async (payload, id) => {
@@ -287,6 +356,56 @@ export const PaymentsPage = () => {
 
         {/* PAGE MAIN BODY */}
         <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-3.5 sm:py-6 max-w-7xl mx-auto space-y-3.5 sm:space-y-6 w-full min-w-0">
+          {/* Cashfree Sandbox Checkout Notice */}
+          {checkoutNotice && (
+            <div
+              className={`p-3.5 sm:p-4 rounded-xl border flex items-start justify-between gap-3 text-body-sm transition-all ${
+                checkoutNotice.type === "error"
+                  ? "bg-error-container/20 border-error/30 text-error"
+                  : checkoutNotice.type === "success"
+                  ? "bg-tertiary-container/30 border-tertiary/40 text-tertiary"
+                  : "bg-primary/10 border-primary/20 text-on-surface"
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className="material-symbols-outlined text-lg mt-0.5 shrink-0">
+                  {checkoutNotice.type === "error"
+                    ? "error"
+                    : checkoutNotice.type === "success"
+                    ? "check_circle"
+                    : "info"}
+                </span>
+                <div>
+                  <h4 className="font-semibold text-body-md mb-0.5">{checkoutNotice.title}</h4>
+                  <p className="text-body-sm opacity-90">{checkoutNotice.message}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCheckoutNotice(null)}
+                className="p-1 rounded-lg hover:bg-surface-container/50 opacity-70 hover:opacity-100 transition-colors shrink-0"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-3.5 sm:p-4 rounded-xl border bg-error-container/20 border-error/30 text-error flex items-center justify-between gap-3 text-body-sm">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg shrink-0">warning</span>
+                <span>{error}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setError("")}
+                className="p-1 rounded-lg hover:bg-error-container/30 transition-colors shrink-0"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+          )}
+
           {/* Executive Header Area */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 min-w-0">
             <div>
@@ -575,7 +694,23 @@ export const PaymentsPage = () => {
                               {getStatusBadge(payment.status)}
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-1">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {payment.status !== "Paid" && (
+                                  <button
+                                    onClick={() => handlePayNow(payment._id)}
+                                    disabled={payingPaymentId === payment._id}
+                                    className="px-2.5 py-1 text-xs bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 rounded-lg font-semibold transition-all flex items-center gap-1 active:scale-95 disabled:opacity-50"
+                                    title="Pay with Cashfree Sandbox"
+                                    type="button"
+                                  >
+                                    {payingPaymentId === payment._id ? (
+                                      <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                                    ) : (
+                                      <span className="material-symbols-outlined text-sm">payments</span>
+                                    )}
+                                    <span>Pay Now</span>
+                                  </button>
+                                )}
                                 {payment.status !== "Paid" ? (
                                   <button
                                     onClick={() => handleMarkAsPaid(payment._id)}
@@ -677,21 +812,39 @@ export const PaymentsPage = () => {
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-outline-variant/20 gap-2 min-w-0">
-                        {payment.status !== "Paid" ? (
-                          <button
-                            onClick={() => handleMarkAsPaid(payment._id)}
-                            className="px-2.5 sm:px-3 py-1.5 text-xs bg-tertiary/15 hover:bg-tertiary/25 text-tertiary rounded-lg border border-tertiary/30 font-semibold transition-colors flex items-center gap-1 active:scale-95 shrink-0"
-                            type="button"
-                          >
-                            <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                            <span>Mark Paid</span>
-                          </button>
-                        ) : (
-                          <span className="text-xs text-tertiary font-medium flex items-center gap-1 px-1 shrink-0">
-                            <span className="material-symbols-outlined text-[16px]">done_all</span>
-                            <span>Cleared</span>
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                          {payment.status !== "Paid" && (
+                            <button
+                              onClick={() => handlePayNow(payment._id)}
+                              disabled={payingPaymentId === payment._id}
+                              className="px-2.5 sm:px-3 py-1.5 text-xs bg-primary/15 hover:bg-primary/25 text-primary rounded-lg border border-primary/30 font-semibold transition-colors flex items-center gap-1 active:scale-95 shrink-0 disabled:opacity-50"
+                              title="Pay with Cashfree Sandbox"
+                              type="button"
+                            >
+                              {payingPaymentId === payment._id ? (
+                                <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                              ) : (
+                                <span className="material-symbols-outlined text-[16px]">payments</span>
+                              )}
+                              <span>Pay Now</span>
+                            </button>
+                          )}
+                          {payment.status !== "Paid" ? (
+                            <button
+                              onClick={() => handleMarkAsPaid(payment._id)}
+                              className="px-2.5 sm:px-3 py-1.5 text-xs bg-tertiary/15 hover:bg-tertiary/25 text-tertiary rounded-lg border border-tertiary/30 font-semibold transition-colors flex items-center gap-1 active:scale-95 shrink-0"
+                              type="button"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                              <span>Mark Paid</span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-tertiary font-medium flex items-center gap-1 px-1 shrink-0">
+                              <span className="material-symbols-outlined text-[16px]">done_all</span>
+                              <span>Cleared</span>
+                            </span>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
                           <button
@@ -752,6 +905,8 @@ export const PaymentsPage = () => {
           setEditingPayment(p);
           setIsDrawerOpen(true);
         }}
+        onPayNow={handlePayNow}
+        isPaying={payingPaymentId === detailsPayment?._id}
         payment={detailsPayment}
       />
 

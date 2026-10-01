@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { paymentsApi } from "../services/api";
+import { openCashfreeCheckout } from "../services/cashfree";
 import { Sidebar } from "../components/Navigation/Sidebar";
 import { PaymentFormDrawer } from "../components/Modals/PaymentFormDrawer";
 import { PaymentDetailsModal } from "../components/Modals/PaymentDetailsModal";
@@ -19,6 +20,7 @@ export const DashboardPage = () => {
   const [detailsPayment, setDetailsPayment] = useState(null);
   const [deletingPayment, setDeletingPayment] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [payingPaymentId, setPayingPaymentId] = useState(null);
 
   // Table filter state: 'all' | 'pending' | 'paid'
   const [tableFilter, setTableFilter] = useState("all");
@@ -58,6 +60,34 @@ export const DashboardPage = () => {
       await paymentsApi.create(payload, token);
     }
     await fetchPayments();
+  };
+
+  const handlePayNow = async (paymentId) => {
+    if (payingPaymentId) return; // Prevent duplicate clicks
+    try {
+      setPayingPaymentId(paymentId);
+      const token = await getToken();
+      if (!token) throw new Error("Authentication required. Please log in again.");
+
+      const res = await paymentsApi.initiatePayment(paymentId, token);
+      const paymentSessionId = res?.data?.payment_session_id;
+      if (!paymentSessionId) {
+        throw new Error("Unable to retrieve payment_session_id from server.");
+      }
+
+      await openCashfreeCheckout(paymentSessionId, "_modal");
+
+      // Verify payment with backend to reconcile status in real time
+      const verifyRes = await paymentsApi.verifyPayment(paymentId, token);
+      if (verifyRes?.data?.status === "Paid" || verifyRes?.data?.verified) {
+        await fetchPayments();
+      }
+    } catch (err) {
+      console.error("Cashfree checkout error:", err);
+      alert(err.message || "Failed to complete Cashfree checkout.");
+    } finally {
+      setPayingPaymentId(null);
+    }
   };
 
   const handleMarkAsPaid = async (paymentId) => {
@@ -768,6 +798,22 @@ export const DashboardPage = () => {
                             <td className="py-3.5 px-4">{getStatusBadge(payment.status)}</td>
                             <td className="py-3.5 px-4 text-right">
                               <div className="inline-flex items-center gap-1.5">
+                                {payment.status !== "Paid" && (
+                                  <button
+                                    onClick={() => handlePayNow(payment._id)}
+                                    disabled={payingPaymentId === payment._id}
+                                    className="px-2.5 py-1 rounded bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 text-label-sm font-label-sm font-semibold transition-all flex items-center gap-1 active:scale-95 disabled:opacity-50"
+                                    title="Pay with Cashfree Sandbox"
+                                    type="button"
+                                  >
+                                    {payingPaymentId === payment._id ? (
+                                      <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                                    ) : (
+                                      <span className="material-symbols-outlined text-[14px]">payments</span>
+                                    )}
+                                    <span>Pay Now</span>
+                                  </button>
+                                )}
                                 {payment.status !== "Paid" ? (
                                   <button
                                     onClick={() => handleMarkAsPaid(payment._id)}
@@ -856,7 +902,23 @@ export const DashboardPage = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1E293B]/60">
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1E293B]/60 flex-wrap">
+                          {payment.status !== "Paid" && (
+                            <button
+                              onClick={() => handlePayNow(payment._id)}
+                              disabled={payingPaymentId === payment._id}
+                              className="px-2.5 py-1 text-label-sm font-label-sm bg-primary/15 text-primary border border-primary/30 rounded-lg flex items-center gap-1 font-semibold active:scale-95 disabled:opacity-50"
+                              type="button"
+                              title="Pay with Cashfree Sandbox"
+                            >
+                              {payingPaymentId === payment._id ? (
+                                <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                              ) : (
+                                <span className="material-symbols-outlined text-[14px]">payments</span>
+                              )}
+                              <span>Pay Now</span>
+                            </button>
+                          )}
                           {payment.status !== "Paid" && (
                             <button
                               onClick={() => handleMarkAsPaid(payment._id)}
@@ -926,6 +988,8 @@ export const DashboardPage = () => {
           setEditingPayment(p);
           setIsDrawerOpen(true);
         }}
+        onPayNow={handlePayNow}
+        isPaying={payingPaymentId === detailsPayment?._id}
         payment={detailsPayment}
       />
 
