@@ -8,6 +8,9 @@ import {
   signOut,
   sendPasswordResetEmail,
   updateProfile,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from "firebase/auth";
 import { auth, googleProvider } from "../config/firebase";
 
@@ -72,10 +75,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, keepSessionActive = true) => {
     if (!auth) {
       throw new Error("Firebase Authentication is not initialized. Please verify your Firebase configuration.");
     }
+    // Configure session persistence prior to signing in (CWE-613)
+    try {
+      const persistence = keepSessionActive ? browserLocalPersistence : browserSessionPersistence;
+      await setPersistence(auth, persistence);
+    } catch (persistErr) {
+      console.warn("Failed to set Firebase auth persistence:", persistErr);
+    }
+
     const result = await signInWithEmailAndPassword(auth, email, password);
     const freshToken = await result.user.getIdToken();
     setToken(freshToken);
@@ -95,10 +106,17 @@ export const AuthProvider = ({ children }) => {
     return result.user;
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (keepSessionActive = true) => {
     if (!auth) {
       throw new Error("Firebase Authentication is not initialized. Please verify your Firebase configuration.");
     }
+    try {
+      const persistence = keepSessionActive ? browserLocalPersistence : browserSessionPersistence;
+      await setPersistence(auth, persistence);
+    } catch (persistErr) {
+      console.warn("Failed to set Firebase auth persistence:", persistErr);
+    }
+
     const result = await signInWithPopup(auth, googleProvider);
     const freshToken = await result.user.getIdToken();
     setToken(freshToken);

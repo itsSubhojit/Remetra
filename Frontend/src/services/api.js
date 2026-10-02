@@ -74,6 +74,7 @@ export const paymentsApi = {
   sendRegistrationOtp: (email) => apiRequest("/api/auth/send-registration-otp", { method: "POST", body: { email } }),
   verifyRegistrationOtp: (email, otp) => apiRequest("/api/auth/verify-registration-otp", { method: "POST", body: { email, otp } }),
   verifyEmailToken: (email, verificationToken) => apiRequest("/api/auth/verify-email-token", { method: "POST", body: { email, verificationToken } }),
+  confirmEmailVerification: (email, verificationToken, token) => apiRequest("/api/auth/confirm-email-verification", { method: "POST", body: { email, verificationToken }, token }),
 };
 
 export const contactApi = {
@@ -84,4 +85,5 @@ export const authApi = {
   sendRegistrationOtp: (email) => apiRequest("/api/auth/send-registration-otp", { method: "POST", body: { email } }),
   verifyRegistrationOtp: (email, otp) => apiRequest("/api/auth/verify-registration-otp", { method: "POST", body: { email, otp } }),
   verifyEmailToken: (email, verificationToken) => apiRequest("/api/auth/verify-email-token", { method: "POST", body: { email, verificationToken } }),
+  confirmEmailVerification: (email, verificationToken, token) => apiRequest("/api/auth/confirm-email-verification", { method: "POST", body: { email, verificationToken }, token }),
 };

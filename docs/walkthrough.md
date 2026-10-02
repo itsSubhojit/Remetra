@@ -435,5 +435,27 @@ Both `verifyPayment` and `handleCashfreeWebhook` check if `payment.status === "P
 
 ---
 
+## 11. Security Hardening & Vulnerability Remediation (CodeRabbit Audit)
+
+Comprehensive security hardening was implemented addressing 12 vulnerability findings across authentication, input processing, race conditions, mass assignment, and logging.
+
+### A. Findings and Fixes Summary
+
+| # | CWE & Title | Affected Component | Vulnerability & Remediation |
+| :-: | :--- | :--- | :--- |
+| **1 & 2** | CWE-1333 ReDoS in Email Validation | `authController.js`<br>`contactController.js` | Enforced strict type validation, RFC 5321 length limits (`5 <= length <= 254`), and replaced regex with linear, predictable validation before evaluation. |
+| **3** | CWE-1333 ReDoS in Link Detection | `contactController.js` | Enforced input length checks (`name <= 100`, `message <= 3000`) before running link scanners; refactored URL regex into predictable linear checks. |
+| **4** | CWE-613 Insufficient Session Expiration | `authMiddleware.js` | Enabled revocation-aware verification (`verifyIdToken(token, true)`), rejecting revoked tokens and disabled/deleted accounts. |
+| **5** | CWE-613 Session Persistence | `AuthContext.jsx`<br>`AuthPage.jsx` | Connected "Keep session active" checkbox to Firebase Auth persistence (`browserLocalPersistence` vs `browserSessionPersistence`) before sign-in. |
+| **6** | CWE-204 Account Enumeration | `authController.js` | Standardized `sendRegistrationOtp` to return an identical HTTP 200 generic response regardless of whether an account already exists. |
+| **7** | CWE-362 OTP Resend Race Condition | `authController.js`<br>`EmailVerification.js` | Added unique compound index `{ email: 1, purpose: 1 }` and implemented atomic conditional updates for 60-second cooldown enforcement. |
+| **8** | CWE-362 OTP Verification Race Condition | `authController.js` | Replaced non-atomic reads with atomic `$inc: { attempts: 1 }` on `attempts < 5` and atomic single-use proof token consumption. |
+| **9** | CWE-807 Rate-Limit Identity Spoofing | `app.js`<br>`contactController.js` | Configured Express `trust proxy` and switched contact rate limiter to use sanitized `req.ip` rather than raw client headers. |
+| **10** | CWE-915 Mass Assignment / Bypass | `paymentController.js` | Built an explicit allowlist in `updatePayment`; strictly stripped and protected `firebaseUid`, `cashfreeOrderId`, audit arrays, and server metadata. |
+| **11** | CWE-287 Reminder Email Authentication | `reminderJob.js`<br>`authController.js` | Enforced `user.emailVerified` check before dispatching reminder emails; added `POST /confirm-email-verification` to sync OTP-verified users to Firebase. |
+| **12** | CWE-117 Log Injection | `reminderJob.js` | Added `sanitizeLogString` to strip CRLF (`\r\n`) and control characters from user-controlled fields (`payment.title`) before logging. |
+
+---
+
 *Report Generated for Remetra Project codebase.*
 

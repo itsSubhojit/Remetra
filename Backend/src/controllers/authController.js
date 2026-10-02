@@ -4,93 +4,152 @@ import EmailVerification from "../models/EmailVerification.js";
 import { sendVerificationOtpEmail } from "../services/emailService.js";
 
 /**
+ * Predictable, linear email validation helper (RFC 5321 length & ReDoS safe)
+ */
+export const isValidEmail = (email) => {
+  if (typeof email !== "string") return false;
+  const trimmed = email.trim();
+  if (trimmed.length < 5 || trimmed.length > 254) return false;
+
+  const atParts = trimmed.split("@");
+  if (atParts.length !== 2) return false;
+
+  const [localPart, domainPart] = atParts;
+  if (!localPart || !domainPart || localPart.length > 64 || domainPart.length > 253) return false;
+
+  const localRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
+  if (!localRegex.test(localPart)) return false;
+
+  const domainRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  return domainRegex.test(domainPart);
+};
+
+/**
  * Controller to send a 6-digit OTP for new user email verification.
  */
 export const sendRegistrationOtp = async (req, res, next) => {
   try {
     const { email } = req.body || {};
-    const trimmedEmail = (email || "").trim().toLowerCase();
-
-    // 1. Email format validation
-    if (!trimmedEmail) {
+    
+    // 1. Strict Input Type & Bounded Email Validation (CWE-1333 ReDoS Protection)
+    if (typeof email !== "string" || !email.trim()) {
       return res.status(400).json({
         success: false,
         message: "Email address is required.",
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmail(trimmedEmail)) {
       return res.status(400).json({
         success: false,
         message: "Please enter a valid email address.",
       });
     }
 
-    // 2. Check if user already exists in Firebase Authentication
+    // 2. Check if user already exists in Firebase Authentication (CWE-204 Account Enumeration Defense)
+    let userAlreadyExists = false;
     try {
       const existingUser = await getAuth().getUserByEmail(trimmedEmail);
       if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: "An account with this email address already exists. Please sign in instead.",
-        });
+        userAlreadyExists = true;
       }
     } catch (firebaseErr) {
-      // auth/user-not-found means user does not exist yet (which is expected for registration)
       if (firebaseErr.code !== "auth/user-not-found") {
         console.error("Firebase user check error:", firebaseErr.message);
       }
     }
 
-    // 3. Resend Cooldown Check (60 seconds minimum between OTP requests)
+    // If account already exists, return uniform response without revealing account existence
+    if (userAlreadyExists) {
+      return res.status(200).json({
+        success: true,
+        message: "If this email is eligible for registration, a 6-digit verification code has been sent.",
+      });
+    }
+
+    // 3. Atomic Cooldown & Claim Check (CWE-362 OTP Resend Race Condition Defense)
+    const now = new Date();
+    const cooldownCutoff = new Date(now.getTime() - 60 * 1000); // 60 seconds minimum between OTP requests
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes OTP lifetime
+
     const existingOtpRecord = await EmailVerification.findOne({
       email: trimmedEmail,
       purpose: "registration",
       verified: false,
-    }).sort({ createdAt: -1 });
-
-    if (existingOtpRecord) {
-      const timeSinceCreationMs = Date.now() - new Date(existingOtpRecord.createdAt).getTime();
-      if (timeSinceCreationMs < 60 * 1000) {
-        const remainingSeconds = Math.ceil((60000 - timeSinceCreationMs) / 1000);
-        return res.status(429).json({
-          success: false,
-          message: `Please wait ${remainingSeconds} seconds before requesting a new verification code.`,
-        });
-      }
-    }
-
-    // 4. Invalidate/Delete any previous registration OTP records for this email
-    await EmailVerification.deleteMany({
-      email: trimmedEmail,
-      purpose: "registration",
     });
 
-    // 5. Generate Cryptographically Secure 6-Digit OTP (100000 to 999999)
+    if (existingOtpRecord && existingOtpRecord.createdAt > cooldownCutoff) {
+      const timeSinceCreationMs = now.getTime() - new Date(existingOtpRecord.createdAt).getTime();
+      const remainingSeconds = Math.ceil((60000 - timeSinceCreationMs) / 1000);
+      return res.status(429).json({
+        success: false,
+        message: `Please wait ${remainingSeconds} seconds before requesting a new verification code.`,
+      });
+    }
+
+    // 4. Generate Cryptographically Secure 6-Digit OTP (100000 to 999999)
     const rawOtpNumber = crypto.randomInt(100000, 1000000);
     const rawOtpString = String(rawOtpNumber);
 
-    // 6. Hash OTP using SHA-256 (Never store plaintext OTP)
+    // 5. Hash OTP using SHA-256 (Never store plaintext OTP)
     const otpHash = crypto.createHash("sha256").update(rawOtpString).digest("hex");
 
-    // 7. Store OTP record with 10-minute expiration timestamp
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    await EmailVerification.create({
-      email: trimmedEmail,
-      otpHash,
-      purpose: "registration",
-      attempts: 0,
-      verified: false,
-      expiresAt,
-    });
+    // 6. Atomically upsert or update OTP record to prevent race conditions
+    let claimedRecord;
+    try {
+      claimedRecord = await EmailVerification.findOneAndUpdate(
+        {
+          email: trimmedEmail,
+          purpose: "registration",
+          $or: [
+            { createdAt: { $lte: cooldownCutoff } },
+            { verified: true },
+          ],
+        },
+        {
+          $set: {
+            otpHash,
+            attempts: 0,
+            verified: false,
+            expiresAt,
+            createdAt: now,
+            verificationTokenHash: null,
+            verificationTokenExpiresAt: null,
+          },
+        },
+        { new: true }
+      );
 
-    // 8. Dispatch OTP Email
+      if (!claimedRecord) {
+        claimedRecord = await EmailVerification.create({
+          email: trimmedEmail,
+          purpose: "registration",
+          otpHash,
+          attempts: 0,
+          verified: false,
+          expiresAt,
+          createdAt: now,
+        });
+      }
+    } catch (dbErr) {
+      // E11000 duplicate key error means a concurrent request just claimed the record
+      if (dbErr.code === 11000) {
+        return res.status(429).json({
+          success: false,
+          message: "A verification code was just requested. Please wait 60 seconds before requesting another.",
+        });
+      }
+      throw dbErr;
+    }
+
+    // 7. Dispatch OTP Email
     await sendVerificationOtpEmail(trimmedEmail, rawOtpString);
 
     return res.status(200).json({
       success: true,
-      message: "A 6-digit verification code has been sent to your email address.",
+      message: "If this email is eligible for registration, a 6-digit verification code has been sent.",
     });
   } catch (error) {
     console.error("Error in sendRegistrationOtp:", error.message);
@@ -103,14 +162,22 @@ export const sendRegistrationOtp = async (req, res, next) => {
 
 /**
  * Controller to verify the 6-digit OTP submitted by the user.
+ * Implements atomic attempt increments (CWE-362) to prevent brute-force race conditions.
  */
 export const verifyRegistrationOtp = async (req, res, next) => {
   try {
     const { email, otp } = req.body || {};
-    const trimmedEmail = (email || "").trim().toLowerCase();
-    const trimmedOtp = (otp || "").trim();
 
-    // 1. Validation
+    if (typeof email !== "string" || typeof otp !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Email address and 6-digit verification code are required.",
+      });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedOtp = otp.trim();
+
     if (!trimmedEmail || !trimmedOtp) {
       return res.status(400).json({
         success: false,
@@ -125,62 +192,108 @@ export const verifyRegistrationOtp = async (req, res, next) => {
       });
     }
 
-    // 2. Find matching unverified OTP record
-    const otpRecord = await EmailVerification.findOne({
-      email: trimmedEmail,
-      purpose: "registration",
-      verified: false,
-    });
+    const now = new Date();
+
+    // 1. Atomically reserve an attempt count (prevents concurrent brute-force race conditions)
+    const otpRecord = await EmailVerification.findOneAndUpdate(
+      {
+        email: trimmedEmail,
+        purpose: "registration",
+        verified: false,
+        attempts: { $lt: 5 },
+        expiresAt: { $gt: now },
+      },
+      {
+        $inc: { attempts: 1 },
+      },
+      { new: true }
+    );
 
     if (!otpRecord) {
+      const existing = await EmailVerification.findOne({
+        email: trimmedEmail,
+        purpose: "registration",
+      });
+
+      if (!existing) {
+        return res.status(400).json({
+          success: false,
+          message: "No active verification request found. Please request a new code.",
+        });
+      }
+
+      if (existing.verified) {
+        return res.status(400).json({
+          success: false,
+          message: "This code has already been verified.",
+        });
+      }
+
+      if (new Date(existing.expiresAt) <= now) {
+        await EmailVerification.deleteOne({ _id: existing._id });
+        return res.status(400).json({
+          success: false,
+          message: "Verification code has expired. Please request a new code.",
+        });
+      }
+
+      if (existing.attempts >= 5) {
+        return res.status(429).json({
+          success: false,
+          message: "Maximum verification attempts exceeded. Please request a new verification code.",
+        });
+      }
+
       return res.status(400).json({
         success: false,
-        message: "No active verification request found. Please request a new code.",
+        message: "Unable to verify code. Please request a new code.",
       });
     }
 
-    // 3. Expiration Check
-    if (new Date() > new Date(otpRecord.expiresAt)) {
-      await EmailVerification.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({
-        success: false,
-        message: "Verification code has expired. Please request a new code.",
-      });
-    }
-
-    // 4. Maximum Attempt Limit Check (5 attempts max)
-    if (otpRecord.attempts >= 5) {
-      await EmailVerification.deleteOne({ _id: otpRecord._id });
-      return res.status(429).json({
-        success: false,
-        message: "Maximum verification attempts exceeded. Please request a new verification code.",
-      });
-    }
-
-    // 5. Compare Hashed OTP
+    // 2. Compare Hashed OTP
     const submittedOtpHash = crypto.createHash("sha256").update(trimmedOtp).digest("hex");
 
     if (submittedOtpHash !== otpRecord.otpHash) {
-      otpRecord.attempts += 1;
-      await otpRecord.save();
-      const remainingAttempts = 5 - otpRecord.attempts;
+      const remainingAttempts = Math.max(0, 5 - otpRecord.attempts);
+      if (remainingAttempts === 0) {
+        return res.status(429).json({
+          success: false,
+          message: "Maximum verification attempts exceeded. Please request a new verification code.",
+        });
+      }
       return res.status(400).json({
         success: false,
         message: `Incorrect verification code. ${remainingAttempts} attempt(s) remaining.`,
       });
     }
 
-    // 6. Generate Cryptographically Secure Verification Proof Token (32 random bytes -> 64 hex chars)
+    // 3. Atomically consume OTP and store single-use verification proof token
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenHash = crypto.createHash("sha256").update(verificationToken).digest("hex");
-    const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minute window to complete registration
+    const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minute window
 
-    // 7. Update record to verified status and store proof token
-    otpRecord.verified = true;
-    otpRecord.otpHash = null; // Single-use: clear OTP hash immediately
-    otpRecord.verificationTokenHash = verificationTokenHash;
-    otpRecord.verificationTokenExpiresAt = tokenExpiresAt;
-    await otpRecord.save();
+    const verifiedRecord = await EmailVerification.findOneAndUpdate(
+      {
+        _id: otpRecord._id,
+        verified: false, // Prevents concurrent double-consumption
+      },
+      {
+        $set: {
+          verified: true,
+          otpHash: null,
+          verificationTokenHash,
+          verificationTokenExpiresAt: tokenExpiresAt,
+        },
+      },
+      { new: true }
+    );
+
+    if (!verifiedRecord) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification code has already been consumed.",
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -203,8 +316,15 @@ export const verifyRegistrationOtp = async (req, res, next) => {
 export const verifyEmailToken = async (req, res, next) => {
   try {
     const { email, verificationToken } = req.body || {};
-    const trimmedEmail = (email || "").trim().toLowerCase();
-    const trimmedToken = (verificationToken || "").trim();
+    if (typeof email !== "string" || typeof verificationToken !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Email and verification token must be valid strings.",
+      });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedToken = verificationToken.trim();
 
     if (!trimmedEmail || !trimmedToken) {
       return res.status(400).json({
@@ -242,6 +362,79 @@ export const verifyEmailToken = async (req, res, next) => {
       success: false,
       valid: false,
       message: "Failed to validate verification token.",
+    });
+  }
+};
+
+/**
+ * Controller to confirm email verification for authenticated user and mark Firebase user as emailVerified: true
+ * (CWE-287 Reminder Email Authentication Defense)
+ */
+export const confirmEmailVerification = async (req, res, next) => {
+  try {
+    const { email, verificationToken } = req.body || {};
+    if (typeof email !== "string" || typeof verificationToken !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Email and verification token must be valid strings.",
+      });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedToken = verificationToken.trim();
+    const firebaseUid = req.user?.uid;
+
+    if (!trimmedEmail || !trimmedToken || !firebaseUid) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address, verification token, and user authentication are required.",
+      });
+    }
+
+    if (req.user.email?.toLowerCase() !== trimmedEmail) {
+      return res.status(403).json({
+        success: false,
+        message: "Authenticated account email does not match verification request.",
+      });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(trimmedToken).digest("hex");
+
+    const record = await EmailVerification.findOneAndUpdate(
+      {
+        email: trimmedEmail,
+        purpose: "registration",
+        verified: true,
+        verificationTokenHash: tokenHash,
+        verificationTokenExpiresAt: { $gt: new Date() },
+      },
+      {
+        $set: {
+          verificationTokenHash: null, // Single-use consumption
+        },
+      },
+      { new: true }
+    );
+
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification proof token is invalid or has expired.",
+      });
+    }
+
+    // Set emailVerified to true in Firebase Admin
+    await getAuth().updateUser(firebaseUid, { emailVerified: true });
+
+    return res.status(200).json({
+      success: true,
+      message: "Email address successfully confirmed and bound to user account.",
+    });
+  } catch (error) {
+    console.error("Error in confirmEmailVerification:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to confirm email verification.",
     });
   }
 };

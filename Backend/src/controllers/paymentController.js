@@ -72,12 +72,58 @@ export const getPaymentId = asyncHandler(async (req, res, next) =>{
 
 
 export const updatePayment = asyncHandler(async (req, res, next) =>{
-    const id = req.params.id
-    const firebaseUid = req.user.uid
+    const id = req.params.id;
+    const firebaseUid = req.user.uid;
 
-    const update = await Payment.findOneAndUpdate({_id: id, firebaseUid: firebaseUid}, req.body, {new: true})
+    // Explicit allowlist of user-editable fields (CWE-915 Mass Assignment Defense)
+    const allowedFields = [
+        "personName",
+        "title",
+        "notes",
+        "category",
+        "consumerId",
+        "provider",
+        "mobileNumber",
+        "rechargeType",
+        "amount",
+        "validityDays",
+        "dueDate",
+        "frequency",
+        "status",
+        "paidDate"
+    ];
+
+    const updatePayload = {};
+    for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+            updatePayload[field] = req.body[field];
+        }
+    }
+
+    // Validate status if provided
+    if (updatePayload.status !== undefined) {
+        const validStatuses = ["Upcoming", "Due", "Overdue", "Paid"];
+        if (!validStatuses.includes(updatePayload.status)) {
+            throw new ApiError(400, "Invalid payment status provided.");
+        }
+        if (updatePayload.status === "Paid" && !updatePayload.paidDate) {
+            updatePayload.paidDate = new Date();
+        }
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+        throw new ApiError(400, "No valid editable fields provided for update.");
+    }
+
+    // Strictly scope by _id and firebaseUid; updatePayload cannot alter firebaseUid, cashfreeOrderId, or audit arrays
+    const update = await Payment.findOneAndUpdate(
+        { _id: id, firebaseUid: firebaseUid },
+        { $set: updatePayload },
+        { new: true, runValidators: true }
+    );
+
     if(!update){
-        throw new ApiError(404, "Can't Update... Please, try again later!")
+        throw new ApiError(404, "Can't Update... Payment not found or unauthorized!");
     }
 
     return res.status(200)

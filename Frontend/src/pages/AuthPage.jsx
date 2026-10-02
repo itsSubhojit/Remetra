@@ -13,6 +13,7 @@ export const AuthPage = () => {
   const [loginEmail, setLoginEmail] = useState(location.state?.email || "");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [keepSessionActive, setKeepSessionActive] = useState(true);
 
   // Register form state
   const [regName, setRegName] = useState("");
@@ -98,7 +99,7 @@ export const AuthPage = () => {
     }
     try {
       setLoading(true);
-      await login(loginEmail, loginPassword);
+      await login(loginEmail, loginPassword, keepSessionActive);
       const destination = location.state?.from?.pathname || "/dashboard";
       navigate(destination, { replace: true });
     } catch (err) {
@@ -171,10 +172,21 @@ export const AuthPage = () => {
     try {
       setIsVerifyingOtp(true);
       // 1. Verify OTP with Backend & acquire verification token proof
-      await paymentsApi.verifyRegistrationOtp(regEmail.trim(), cleanOtp);
+      const verifyRes = await paymentsApi.verifyRegistrationOtp(regEmail.trim(), cleanOtp);
       
       // 2. Complete Firebase account registration only after verified proof
-      await register(regName, regEmail.trim(), regPassword);
+      const newUser = await register(regName, regEmail.trim(), regPassword);
+
+      // 3. Confirm email verification with Firebase Admin (CWE-287 Reminder Email Authentication Defense)
+      if (verifyRes?.verificationToken && newUser) {
+        try {
+          const freshIdToken = await newUser.getIdToken();
+          await paymentsApi.confirmEmailVerification(regEmail.trim(), verifyRes.verificationToken, freshIdToken);
+        } catch (confirmErr) {
+          console.warn("Could not confirm email verification with backend:", confirmErr);
+        }
+      }
+
       setIsOtpModalOpen(false);
       navigate("/dashboard", { replace: true });
     } catch (err) {
@@ -188,7 +200,7 @@ export const AuthPage = () => {
     setError("");
     try {
       setLoading(true);
-      await loginWithGoogle();
+      await loginWithGoogle(keepSessionActive);
       const destination = location.state?.from?.pathname || "/dashboard";
       navigate(destination, { replace: true });
     } catch (err) {
@@ -473,7 +485,8 @@ export const AuthPage = () => {
                   <div className="flex items-center justify-between pt-1">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
-                        defaultChecked
+                        checked={keepSessionActive}
+                        onChange={(e) => setKeepSessionActive(e.target.checked)}
                         className="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant/80 text-primary-container focus:ring-0 focus:ring-offset-0"
                         type="checkbox"
                       />

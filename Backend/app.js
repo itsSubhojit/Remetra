@@ -11,6 +11,9 @@ import authRouter from "./src/routes/authRoutes.js";
 
 const app = express();
 
+// Trust reverse proxy (e.g. Render, Vercel, Cloudflare) for secure client IP detection
+app.set("trust proxy", process.env.TRUST_PROXY || 1);
+
 const defaultOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",

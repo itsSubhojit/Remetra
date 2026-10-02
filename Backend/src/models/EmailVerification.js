@@ -53,4 +53,7 @@ const EmailVerificationSchema = new mongoose.Schema(
   }
 );
 
+// Unique compound index guarantees single record per email & purpose (prevents OTP creation race conditions)
+EmailVerificationSchema.index({ email: 1, purpose: 1 }, { unique: true });
+
 export default mongoose.model("EmailVerification", EmailVerificationSchema);

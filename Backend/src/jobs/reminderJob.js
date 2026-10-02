@@ -1,7 +1,16 @@
 import cron from "node-cron";
 import { Payment } from "../models/Payment.model.js";
+import EmailVerification from "../models/EmailVerification.js";
 import { getAuth } from "firebase-admin/auth";
 import { sendReminderEmail } from "../services/emailService.js";
+
+/**
+ * Sanitizes user-controlled strings to prevent line-oriented log injection (CWE-117)
+ */
+const sanitizeLogString = (str) => {
+    if (typeof str !== "string") return "";
+    return str.replace(/[\r\n\x00-\x1f\x7f-\x9f]/g, " ").trim();
+};
 
 const reminderJob = cron.schedule("* * * * *", async () => {
     console.log("Running Remetra reminder job...");
@@ -34,6 +43,20 @@ const reminderJob = cron.schedule("* * * * *", async () => {
                         `No email found for Firebase user: ${payment.firebaseUid}`
                     );
                     continue;
+                }
+
+                // Ensure email address belongs to a verified mailbox (CWE-287 Reminder Email Authentication Defense)
+                const isEmailVerified = user.emailVerified || (await EmailVerification.exists({ email: user.email.toLowerCase(), verified: true }));
+                if (!isEmailVerified) {
+                    console.warn(
+                        `[ReminderJob] Skipping reminder for unverified user ${user.uid} (${sanitizeLogString(user.email)})`
+                    );
+                    continue;
+                }
+
+                // If user had a verified record in MongoDB but Firebase hadn't synced, sync it now
+                if (!user.emailVerified && isEmailVerified) {
+                    getAuth().updateUser(user.uid, { emailVerified: true }).catch(() => {});
                 }
 
                 // Calculate remaining days
@@ -178,13 +201,13 @@ Smart Bill Reminders & Spend Insights
                 await payment.save();
 
                 console.log(
-                    `Reminder sent to ${user.email} for ${payment.title}`
+                    `Reminder sent to ${sanitizeLogString(user.email)} for payment "${sanitizeLogString(payment.title)}" (ID: ${payment._id})`
                 );
 
             } catch (error) {
                 console.error(
-                    `Failed to process reminder for ${payment.title}:`,
-                    error.message
+                    `Failed to process reminder for payment "${sanitizeLogString(payment.title)}" (ID: ${payment._id}):`,
+                    sanitizeLogString(error.message)
                 );
             }
         }
