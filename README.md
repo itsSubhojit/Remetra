@@ -133,8 +133,9 @@ flowchart TD
 - **Framework**: Express.js
 - **Database**: MongoDB Atlas via Mongoose ORM
 - **Identity Verification**: Firebase Admin SDK (`firebase-admin`)
+- **Rate Limiting & Abuse Prevention**: `express-rate-limit` (Tiered route-level limiters)
 - **Background Jobs**: `node-cron`
-- **Email Delivery**: Nodemailer (Gmail SMTP)
+- **Email Delivery**: Resend API & Nodemailer (Transaction emails & OTPs)
 
 ---
 
@@ -150,18 +151,24 @@ Remetra/
 │       │   ├── db.js            # MongoDB Mongoose connection
 │       │   └── firebase.js      # Firebase Admin SDK initialization
 │       ├── controllers/
-│       │   └── paymentController.js # Payments CRUD logic
+│       │   ├── authController.js    # Registration OTP & token verification
+│       │   ├── contactController.js # Support/grievance contact submissions
+│       │   └── paymentController.js # Payments CRUD & Cashfree gateway logic
 │       ├── jobs/
 │       │   └── reminderJob.js   # Automated email reminder cron job
 │       ├── middlewares/
 │       │   ├── authMiddleware.js # Bearer Token authentication guard
-│       │   └── errorHandler.js   # Global error handling
+│       │   ├── errorHandler.js   # Global error handling
+│       │   └── rateLimiter.js    # Tiered route-level rate limiters
 │       ├── models/
+│       │   ├── EmailVerification.js # Registration OTP/token schema
 │       │   └── Payment.model.js  # Mongoose Payment schema
 │       ├── routes/
-│       │   └── paymentRoutes.js  # Express payment routes
+│       │   ├── authRoutes.js     # OTP & verification routes
+│       │   ├── contactRoutes.js  # Public contact inquiry routes
+│       │   └── paymentRoutes.js  # Express payment & Cashfree routes
 │       └── services/
-│           └── emailService.js   # Nodemailer email transporter
+│           └── emailService.js   # Resend API & email templates
 └── Frontend/
     ├── index.html
     ├── vercel.json              # Vercel SPA rewrite routing rules
@@ -177,20 +184,73 @@ Remetra/
 
 ## 🔌 API Endpoints Summary
 
-All `/api/payments` endpoints require an `Authorization: Bearer <Firebase_Token>` header.
+All protected endpoints require an `Authorization: Bearer <Firebase_Token>` header.
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/` | API Status |
-| `GET` | `/health` | Healthcheck endpoint for UptimeRobot monitoring |
-| `GET` | `/api/payments` | Retrieve all payments for the authenticated user |
-| `GET` | `/api/payments/:id` | Get single payment details by ID |
-| `POST` | `/api/payments` | Create a new payment commitment |
-| `POST` | `/api/payments/:id/pay` | Create Cashfree Sandbox order, persist `cashfreeOrderId`, and return session ID |
-| `GET` | `/api/payments/:id/verify-payment` | Verify payment status with Cashfree and update Remetra payment to Paid (Authenticated) |
-| `POST` | `/api/payments/webhook` | Cashfree webhook listener with raw body HMAC-SHA256 signature verification (Public) |
-| `PUT` | `/api/payments/:id` | Update an existing payment |
-| `DELETE` | `/api/payments/:id` | Delete a payment record |
+| Method | Endpoint | Auth | Rate Limit Tier | Description |
+| :--- | :--- | :---: | :---: | :--- |
+| `GET` | `/` | Public | None | Root API health status (unthrottled for cloud probes) |
+| `GET` | `/health` | Public | None | Healthcheck endpoint for Render / Uptime monitoring |
+| `POST` | `/api/auth/send-registration-otp` | Public | 10 req / 15m (IP) | Generate and dispatch 6-digit registration OTP via Resend |
+| `POST` | `/api/auth/verify-registration-otp` | Public | 10 req / 15m (IP) | Verify registration OTP with 5-attempt brute-force protection |
+| `POST` | `/api/auth/verify-email-token` | Public | 30 req / 15m (IP) | Verify temporary email verification proof token |
+| `POST` | `/api/auth/confirm-email-verification` | Bearer | 30 req / 15m (IP) | Confirm email verification status on Firebase user record |
+| `POST` | `/api/contact` | Public | 5 req / 15m (IP) | Submit validated contact/support inquiry |
+| `GET` | `/api/payments` | Bearer | 60 req / 1m (UID) | Retrieve all payments for the authenticated user |
+| `GET` | `/api/payments/:id` | Bearer | 60 req / 1m (UID) | Get single payment details by ID |
+| `POST` | `/api/payments` | Bearer | 60 req / 1m (UID) | Create a new payment commitment |
+| `PUT` | `/api/payments/:id` | Bearer | 60 req / 1m (UID) | Update an existing payment record |
+| `DELETE` | `/api/payments/:id` | Bearer | 60 req / 1m (UID) | Delete a single payment record |
+| `DELETE` | `/api/payments/account` | Bearer | 5 req / 15m (UID) | Delete user account and cascade purge payments |
+| `POST` | `/api/payments/:id/pay` | Bearer | 15 req / 1m (UID) | Create Cashfree Sandbox order and return session ID |
+| `GET` | `/api/payments/:id/verify-payment` | Bearer | 15 req / 1m (UID) | Actively verify payment status with Cashfree API |
+| `POST` | `/api/payments/:id/verify-payment` | Bearer | 15 req / 1m (UID) | POST variant for active payment status reconciliation |
+| `POST` | `/api/payments/webhook` | Public | 300 req / 5m (IP) | Cashfree server webhook listener (HMAC-SHA256 verified) |
+
+---
+
+## 🛡️ Security Architecture & Rate-Limiting Policy
+
+Remetra enforces a layered defense-in-depth security model using `express-rate-limit` (v8) with tiered route-level middleware to protect server resources, MongoDB connections, and third-party API quotas:
+
+### Rate-Limiting Tiers
+1. **Global Baseline Limiter (`globalLimiter`)**:
+   - **Limit**: `300 requests / 15 minutes / IP`.
+   - Applied globally in `app.js` across all API routers. Provides defense against broad volumetric floods.
+   - Root `/` and `/health` routes remain **unthrottled** so cloud container orchestrators and monitoring probes (e.g. Render, UptimeRobot) are never prematurely blocked.
+2. **Authentication & OTP Limiter (`authOtpLimiter`)**:
+   - **Limit**: `10 requests / 15 minutes / IP`.
+   - Protects `/send-registration-otp` and `/verify-registration-otp`. Complements application-level protections (60s resend cooldown, 5-attempt limit, 10-minute expiry) to prevent OTP bombing.
+3. **Token Verification Limiter (`tokenVerificationLimiter`)**:
+   - **Limit**: `30 requests / 15 minutes / IP`.
+   - Protects `/verify-email-token` and `/confirm-email-verification` from rapid-fire token enumeration.
+4. **Payment Gateway Limiter (`paymentGatewayLimiter`)**:
+   - **Limit**: `15 requests / 1 minute / authenticated user (`req.user.uid`)` (falls back to IP).
+   - Protects `POST /:id/pay` and `GET|POST /:id/verify-payment`. Prevents gateway quota exhaustion and order collision while allowing normal checkout retries.
+5. **Payment CRUD Limiter (`paymentCrudLimiter`)**:
+   - **Limit**: `60 requests / 1 minute / authenticated user (`req.user.uid`)` (falls back to IP).
+   - Protects payment creation, retrieval, updates, and deletion. Sized generously so active dashboard usage is smooth and uninhibited.
+6. **Account Deletion Limiter (`accountDeletionLimiter`)**:
+   - **Limit**: `5 requests / 15 minutes / authenticated user (`req.user.uid`)`.
+   - Restricts repetitive invocation of heavy cascade deletion operations.
+7. **Cashfree Webhook Limiter (`webhookLimiter`)**:
+   - **Limit**: `300 requests / 5 minutes / IP`.
+   - **Authentication**: Public endpoint — Firebase Auth is **intentionally NOT used** because requests originate server-to-server from Cashfree. Authenticated solely via cryptographic HMAC-SHA256 signature verification (`x-webhook-signature`, `x-webhook-timestamp`, `req.rawBody`).
+   - Sized for high-capacity burst absorption to ensure legitimate webhook events dispatched simultaneously by Cashfree are never dropped.
+8. **Contact Form Limiter (`contactLimiter`)**:
+   - **Limit**: `5 requests / 15 minutes / IP`.
+   - Protects `POST /api/contact` against automated spam and email dispatch abuse.
+
+> [!NOTE]
+> **Business Logic Unaffected**: The rate-limiting layer functions strictly as a network and router gatekeeper. Cashfree order creation, signature verification, payment verification, and webhook reconciliation business logic remain completely unchanged.
+
+> [!IMPORTANT]
+> **Process-Local Storage**: Rate limiters currently utilize an in-memory, process-local store (`MemoryStore`). Limits are tracked per Node.js process instance and are not shared across distributed multi-instance clusters. If horizontal multi-instance scaling is introduced in the future, a shared store (such as Redis) can be plugged into `express-rate-limit`.
+
+### Reverse-Proxy & Anti-Spoofing Configuration (`TRUST_PROXY`)
+When deployed behind reverse proxies such as **Render**, Express must derive the client's true IP rather than the proxy's internal address:
+- In `app.js`, Express is configured with `app.set("trust proxy", 1)`.
+- Configuring trust for exactly **1 hop** tells Express to trust Render's immediate reverse proxy and inspect the connecting IP from the right side of `X-Forwarded-For`.
+- This prevents attackers from spoofing client IPs by sending forged `X-Forwarded-For` headers, guaranteeing that rate-limit counters cannot be bypassed through header manipulation.
 
 ---
 
@@ -272,6 +332,7 @@ PORT=5000
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/remetra
 FIREBASE_SERVICE_ACCOUNT_PATH=./src/config/serviceAccountKey.json
 RESEND_API_KEY=re_your_resend_api_key
+TRUST_PROXY=1 # 1 hop for Render / reverse proxy client IP detection
 
 # Cashfree Sandbox Credentials (Backend-Only)
 CASHFREE_APP_ID=your_cashfree_sandbox_app_id

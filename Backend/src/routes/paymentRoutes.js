@@ -1,33 +1,42 @@
-import { Router } from 'express'
-import { firebaseAuth } from '../middlewares/authMiddleware.js'
-import { 
-    paymentUser, 
-    getAllPayments, 
-    getPaymentId, 
-    updatePayment, 
-    deletePayment, 
-    deleteUserAccount, 
-    initiatePayment,
-    verifyPayment,
-    handleCashfreeWebhook
-} from "../controllers/paymentController.js"
+import { Router } from "express";
+import { firebaseAuth } from "../middlewares/authMiddleware.js";
+import {
+  paymentGatewayLimiter,
+  paymentCrudLimiter,
+  accountDeletionLimiter,
+  webhookLimiter,
+} from "../middlewares/rateLimiter.js";
+import {
+  paymentUser,
+  getAllPayments,
+  getPaymentId,
+  updatePayment,
+  deletePayment,
+  deleteUserAccount,
+  initiatePayment,
+  verifyPayment,
+  handleCashfreeWebhook,
+} from "../controllers/paymentController.js";
 
+const router = Router();
 
-const router = Router()
+// Cashfree Webhook listener (Public - rate-limited and authenticated via Cashfree Signature)
+router.route("/webhook").post(webhookLimiter, handleCashfreeWebhook);
 
-// Cashfree Webhook listener (Public - authenticated via Cashfree Signature)
-router.route("/webhook").post(handleCashfreeWebhook)
+// User account deletion endpoints (Protected - strict rate limit)
+router.route("/account").delete(firebaseAuth, accountDeletionLimiter, deleteUserAccount);
+router.route("/user/account").delete(firebaseAuth, accountDeletionLimiter, deleteUserAccount);
 
-router.route("/account").delete(firebaseAuth, deleteUserAccount)
-router.route("/user/account").delete(firebaseAuth, deleteUserAccount)
-router.route("/").post(firebaseAuth, paymentUser)
-router.route("/").get(firebaseAuth, getAllPayments)
-router.route("/:id").get(firebaseAuth, getPaymentId)
-router.route("/:id").put(firebaseAuth, updatePayment)
-router.route("/:id").delete(firebaseAuth, deletePayment)
-router.route("/:id/pay").post(firebaseAuth, initiatePayment)
-router.route("/:id/verify-payment").get(firebaseAuth, verifyPayment)
-router.route("/:id/verify-payment").post(firebaseAuth, verifyPayment)
+// Payment CRUD endpoints (Protected - user-aware rate limit)
+router.route("/").post(firebaseAuth, paymentCrudLimiter, paymentUser);
+router.route("/").get(firebaseAuth, paymentCrudLimiter, getAllPayments);
+router.route("/:id").get(firebaseAuth, paymentCrudLimiter, getPaymentId);
+router.route("/:id").put(firebaseAuth, paymentCrudLimiter, updatePayment);
+router.route("/:id").delete(firebaseAuth, paymentCrudLimiter, deletePayment);
 
+// Cashfree Payment Initiation & Verification endpoints (Protected - payment gateway limiter)
+router.route("/:id/pay").post(firebaseAuth, paymentGatewayLimiter, initiatePayment);
+router.route("/:id/verify-payment").get(firebaseAuth, paymentGatewayLimiter, verifyPayment);
+router.route("/:id/verify-payment").post(firebaseAuth, paymentGatewayLimiter, verifyPayment);
 
-export default router
+export default router;

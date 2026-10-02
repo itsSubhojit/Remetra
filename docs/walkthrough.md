@@ -457,5 +457,119 @@ Comprehensive security hardening was implemented addressing 12 vulnerability fin
 
 ---
 
+## 12. Rate-Limiting Architecture & GitHub CodeQL Hardening (`js/missing-rate-limiting`)
+
+To eliminate 25 HIGH-severity alerts reported by GitHub CodeQL for rule `js/missing-rate-limiting`, Remetra introduced a centralized, tiered rate-limiting architecture built with `express-rate-limit` (v8).
+
+### A. Root Cause Analysis of CodeQL Findings
+CodeQL flags HTTP request handlers that execute database queries, cryptographic calculations (bcrypt, HMAC-SHA256), email dispatches, or third-party gateway interactions without attached rate-limiting middleware.
+In Remetra:
+1. Handlers in `paymentRoutes.js` and `authRoutes.js` performed state mutations and lookups without router-level rate limiting.
+2. Routers were mounted twice in `app.js` (e.g. `/api/payments` and `/payments`), duplicating CodeQL’s static analysis paths and producing 25 total alerts.
+
+### B. Centralized Architecture (`rateLimiter.js`)
+All rate-limiting logic is encapsulated in `Backend/src/middlewares/rateLimiter.js`, exporting tiered limiters tailored to each endpoint’s risk and cost profile:
+
+```
+                            Incoming Request
+                                   │
+                                   ▼
+                       app.set("trust proxy", 1)
+                                   │
+                    ┌──────────────┴──────────────┐
+                    │                             │
+          / & /health [UNTHROTTLED]          All API Endpoints
+                                                  │
+                                                  ▼
+                                            globalLimiter
+                                      (300 req / 15 min / IP)
+                                                  │
+         ┌─────────────────────────┬──────────────┴──────────────┬─────────────────────────┐
+         ▼                         ▼                             ▼                         ▼
+   Auth / OTP Routes       Cashfree Webhook             Protected Payments        Contact Form Route
+┌──────────────────────┐ ┌──────────────────────┐    ┌──────────────────────┐   ┌──────────────────────┐
+│ authOtpLimiter       │ │ webhookLimiter       │    │ firebaseAuth         │   │ contactLimiter       │
+│ (10 req / 15m / IP)  │ │ (300 req / 5m / IP)  │    └──────────┬───────────┘   │ (5 req / 15m / IP)   │
+│                      │ │ [NO Firebase Auth]   │               │               └──────────────────────┘
+│ tokenVerification-   │ └──────────────────────┘               │
+│   Limiter            │                     ┌──────────────────┴──────────────────┐
+│ (30 req / 15m / IP)  │                     ▼                                     ▼
+└──────────────────────┘           paymentGatewayLimiter                 paymentCrudLimiter
+                                   (15 req / 1m / UID)                   (60 req / 1m / UID)
+                                   /:id/pay, /:id/verify-payment         GET, POST, PUT, DELETE
+                                                                         accountDeletionLimiter
+                                                                         (5 req / 15m / UID)
+```
+
+### C. Limiter Tiers & Configuration
+
+| Limiter | Target Endpoints | Key / Scope | Window / Limit | Purpose |
+|---|---|---|---|---|
+| `globalLimiter` | All API routes (`app.js`) | IP (`ipKeyGenerator`) | 15 min / 300 req | Baseline DoS mitigation. Excludes `/` and `/health` for Render health checks. |
+| `authOtpLimiter` | `/send-registration-otp`<br>`/verify-registration-otp` | IP (`ipKeyGenerator`) | 15 min / 10 req | Mitigates OTP brute-force & email flooding. Preserves internal 60s cooldown & 5-attempt limits. |
+| `tokenVerificationLimiter` | `/verify-email-token`<br>`/confirm-email-verification` | IP (`ipKeyGenerator`) | 15 min / 30 req | Mitigates email proof token enumeration. |
+| `paymentGatewayLimiter` | `/:id/pay`<br>`/:id/verify-payment` | User UID (`req.user.uid`) | 1 min / 15 req | Throttles rapid Cashfree order creation and active status checks. |
+| `paymentCrudLimiter` | `GET`, `POST`, `PUT`, `DELETE` (`/api/payments`) | User UID (`req.user.uid`) | 1 min / 60 req | Protects MongoDB connection pool while ensuring smooth UI responsiveness. |
+| `accountDeletionLimiter` | `DELETE /account`<br>`DELETE /user/account` | User UID (`req.user.uid`) | 15 min / 5 req | Restricts repetitive execution of cascade deletion queries. |
+| `webhookLimiter` | `POST /api/payments/webhook` | IP (`ipKeyGenerator`) | 5 min / 300 req | Server-to-server burst buffer. **Firebase Auth is intentionally omitted.** |
+| `contactLimiter` | `POST /api/contact` | IP (`ipKeyGenerator`) | 15 min / 5 req | Prevents contact form spam and outbound email abuse. Replaces ad-hoc in-memory Map. |
+
+### D. Route-Level Middleware Placement
+To ensure static detectability by CodeQL's AST rules, middleware is attached directly to route declarations:
+- In `paymentRoutes.js`:
+  ```javascript
+  router.route("/webhook").post(webhookLimiter, handleCashfreeWebhook);
+  router.route("/account").delete(firebaseAuth, accountDeletionLimiter, deleteUserAccount);
+  router.route("/").post(firebaseAuth, paymentCrudLimiter, paymentUser);
+  router.route("/:id/pay").post(firebaseAuth, paymentGatewayLimiter, initiatePayment);
+  router.route("/:id/verify-payment").get(firebaseAuth, paymentGatewayLimiter, verifyPayment);
+  ```
+- In `authRoutes.js`:
+  ```javascript
+  router.post("/send-registration-otp", authOtpLimiter, sendRegistrationOtp);
+  router.post("/verify-registration-otp", authOtpLimiter, verifyRegistrationOtp);
+  router.post("/verify-email-token", tokenVerificationLimiter, verifyEmailToken);
+  router.post("/confirm-email-verification", firebaseAuth, tokenVerificationLimiter, confirmEmailVerification);
+  ```
+- In `contactRoutes.js`:
+  ```javascript
+  router.post("/", contactLimiter, submitContactInquiry);
+  ```
+
+### E. Cashfree Webhook Architecture & Resilience
+1. **Intentionally Unauthenticated by Firebase**: Webhooks originate from Cashfree backend servers, not browser users. Attaching `firebaseAuth` would reject all legitimate webhook events.
+2. **Cryptographic Integrity**: Authentication relies entirely on HMAC-SHA256 signature verification (`x-webhook-signature`, `x-webhook-timestamp`) against `CASHFREE_SECRET_KEY` using `req.rawBody`.
+3. **Burst Absorption**: The limit of 300 requests / 5 minutes accommodates peak billing traffic bursts.
+4. **Gateway Retry & Synchronous Fallback**: If temporarily throttled (HTTP 429), Cashfree automatically retries with exponential backoff. In parallel, Remetra's client-side checkout triggers synchronous active verification (`/:id/verify-payment`), ensuring payments settle even if webhooks encounter network delays.
+
+### F. Reverse-Proxy Configuration (`TRUST_PROXY=1`)
+Remetra runs on Render behind a managed reverse proxy:
+- In `app.js`, `app.set("trust proxy", 1)` is explicitly configured.
+- Trusting exactly 1 upstream hop instructs Express to inspect `X-Forwarded-For` from right to left, selecting Render's client IP entry.
+- Forged client headers (e.g. `X-Forwarded-For: 1.2.3.4`) are discarded by Express's internal `proxy-addr` engine, preventing IP spoofing to reset rate-limit counters.
+
+### G. In-Memory Process-Local Storage Note
+Rate limits are currently tracked using `express-rate-limit`'s built-in `MemoryStore`.
+- Limits are scoped to the individual Node.js process.
+- In-memory counters are not shared across distributed multi-instance clusters. If horizontal scaling is implemented in the future, a shared store (such as Redis via `rate-limit-redis`) will be introduced.
+
+### H. Verification & Testing
+Prior to deployment, the rate-limiting implementation underwent automated verification:
+1. **10/10 Integration Tests Passed**:
+   - `GET /health` and `GET /` remain unthrottled (HTTP 200).
+   - `POST /api/auth/send-registration-otp` returns HTTP 429 on the 11th request with the expected error message.
+   - `POST /api/payments/webhook` rejects with HTTP 400 (missing signature headers), confirming Firebase auth is not required.
+   - `POST /api/contact` returns HTTP 429 on the 6th request.
+   - Distinct authenticated user UIDs (`user_alpha` vs `user_beta`) are assigned separate rate-limit buckets.
+   - `trust proxy` is verified as integer 1.
+2. **Syntax Validation**: `node -c` executed on all modified files with 0 syntax errors.
+3. **Frontend Production Build**: `npm run build` executed in `Frontend/` and succeeded with 0 errors.
+
+### I. Next Steps
+The expected next step is to stage, commit, and push these changes to GitHub to allow GitHub CodeQL Default Setup to rescan the repository and confirm resolution of the 25 `js/missing-rate-limiting` alerts.
+
+---
+
 *Report Generated for Remetra Project codebase.*
+
 

@@ -5,14 +5,18 @@ import express from "express";
 import cors from "cors";
 import "./src/config/firebase.js";
 import { errorHandler } from "./src/middlewares/errorHandler.js";
-import paymentRouter from "./src/routes/paymentRoutes.js"
+import { globalLimiter } from "./src/middlewares/rateLimiter.js";
+import paymentRouter from "./src/routes/paymentRoutes.js";
 import contactRouter from "./src/routes/contactRoutes.js";
 import authRouter from "./src/routes/authRoutes.js";
 
 const app = express();
 
-// Trust reverse proxy (e.g. Render, Vercel, Cloudflare) for secure client IP detection
-app.set("trust proxy", process.env.TRUST_PROXY || 1);
+// Trust reverse proxy (e.g. Render 1 hop) for secure client IP detection without spoofing
+const trustProxySetting = process.env.TRUST_PROXY !== undefined
+  ? (isNaN(Number(process.env.TRUST_PROXY)) ? process.env.TRUST_PROXY : Number(process.env.TRUST_PROXY))
+  : 1;
+app.set("trust proxy", trustProxySetting);
 
 const defaultOrigins = [
   "http://localhost:5173",
@@ -39,6 +43,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(
   express.json({
     verify: (req, res, buf) => {
@@ -47,6 +52,7 @@ app.use(
   })
 );
 
+// Unthrottled health & root routes for Render container health probes
 app.get("/", (req, res) => {
   res.json({ message: "Remetra Backend API is running" });
 });
@@ -54,6 +60,9 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
+
+// Global baseline rate limiter for all API endpoints
+app.use(globalLimiter);
 
 app.use("/api/payments", paymentRouter);
 app.use("/payments", paymentRouter);

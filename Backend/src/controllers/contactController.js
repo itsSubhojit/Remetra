@@ -1,21 +1,6 @@
 import { sendContactInquiryEmail } from "../services/emailService.js";
 import { isValidEmail } from "./authController.js";
 
-// In-Memory Rate Limiter Map (IP -> { count, expiresAt })
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS_PER_WINDOW = 5;
-
-// Periodic cleanup of expired rate limit entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, data] of rateLimitMap.entries()) {
-    if (now > data.expiresAt) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}, 10 * 60 * 1000);
-
 /**
  * Predictable, linear URL / link detection helper (CWE-1333 ReDoS Safe)
  * Tests bounded strings for protocol headers or common domain links without nested catastrophic backtracking.
@@ -33,32 +18,13 @@ const containsUrlOrLink = (text) => {
 
 /**
  * Controller to handle public contact / privacy / grievance submissions securely.
+ * Note: IP rate-limiting is handled upstream by contactLimiter middleware.
  */
 export const submitContactInquiry = async (req, res, next) => {
   try {
-    // 1. IP Rate Limiting Protection using Express sanitized req.ip (CWE-807 Protection)
-    const clientIp = req.ip || req.socket?.remoteAddress || "unknown_ip";
-    const now = Date.now();
-    const clientData = rateLimitMap.get(clientIp);
-
-    if (clientData && now < clientData.expiresAt) {
-      if (clientData.count >= MAX_REQUESTS_PER_WINDOW) {
-        return res.status(429).json({
-          success: false,
-          message: "Too many contact submissions from your IP. Please wait 15 minutes before trying again.",
-        });
-      }
-      clientData.count += 1;
-    } else {
-      rateLimitMap.set(clientIp, {
-        count: 1,
-        expiresAt: now + RATE_LIMIT_WINDOW_MS,
-      });
-    }
-
     const { category, name, email, message } = req.body || {};
 
-    // 2. Strict Input Type Checks
+    // 1. Strict Input Type Checks
     if (
       typeof category !== "string" ||
       typeof name !== "string" ||
@@ -71,13 +37,13 @@ export const submitContactInquiry = async (req, res, next) => {
       });
     }
 
-    // 3. Trim Whitespace & Prevent CRLF Injection in Header Fields
+    // 2. Trim Whitespace & Prevent CRLF Injection in Header Fields
     const trimmedCategory = category.replace(/[\r\n]/g, "").trim();
     const trimmedName = name.replace(/[\r\n]/g, "").trim();
     const trimmedEmail = email.replace(/[\r\n]/g, "").trim();
     const trimmedMessage = message.trim();
 
-    // 4. Required Fields Check
+    // 3. Required Fields Check
     if (!trimmedCategory || !trimmedName || !trimmedEmail || !trimmedMessage) {
       return res.status(400).json({
         success: false,
@@ -85,7 +51,7 @@ export const submitContactInquiry = async (req, res, next) => {
       });
     }
 
-    // 5. Input Length Limit Checks BEFORE expensive scanning (CWE-1333 ReDoS Protection)
+    // 4. Input Length Limit Checks BEFORE expensive scanning (CWE-1333 ReDoS Protection)
     if (trimmedCategory.length > 50) {
       return res.status(400).json({
         success: false,
@@ -114,7 +80,7 @@ export const submitContactInquiry = async (req, res, next) => {
       });
     }
 
-    // 6. Allowed Category Whitelist Check
+    // 5. Allowed Category Whitelist Check
     const allowedCategories = ["support", "privacy", "grievance"];
     if (!allowedCategories.includes(trimmedCategory)) {
       return res.status(400).json({
@@ -123,7 +89,7 @@ export const submitContactInquiry = async (req, res, next) => {
       });
     }
 
-    // 7. Predictable Email Syntax Check (CWE-1333 ReDoS Safe)
+    // 6. Predictable Email Syntax Check (CWE-1333 ReDoS Safe)
     if (!isValidEmail(trimmedEmail)) {
       return res.status(400).json({
         success: false,
@@ -131,7 +97,7 @@ export const submitContactInquiry = async (req, res, next) => {
       });
     }
 
-    // 8. Strict Link & URL Blocking on Bounded Input ("No Links Allowed")
+    // 7. Strict Link & URL Blocking on Bounded Input ("No Links Allowed")
     if (containsUrlOrLink(trimmedName) || containsUrlOrLink(trimmedMessage)) {
       return res.status(400).json({
         success: false,
@@ -139,7 +105,7 @@ export const submitContactInquiry = async (req, res, next) => {
       });
     }
 
-    // 8. Dispatch Email via Secure Nodemailer Service
+    // 8. Dispatch Email via Secure Email Service
     await sendContactInquiryEmail({
       category: trimmedCategory,
       name: trimmedName,
