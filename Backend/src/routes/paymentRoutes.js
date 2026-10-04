@@ -16,6 +16,7 @@ import {
   initiatePayment,
   verifyPayment,
   handleCashfreeWebhook,
+  extractReceiptData
 } from "../controllers/paymentController.js";
 
 const router = Router();
@@ -38,5 +39,7 @@ router.route("/:id").delete(firebaseAuth, paymentCrudLimiter, deletePayment);
 router.route("/:id/pay").post(firebaseAuth, paymentGatewayLimiter, initiatePayment);
 router.route("/:id/verify-payment").get(firebaseAuth, paymentGatewayLimiter, verifyPayment);
 router.route("/:id/verify-payment").post(firebaseAuth, paymentGatewayLimiter, verifyPayment);
+
+router.route("/extract-receipt").post(firebaseAuth, extractReceiptData)
 
 export default router;

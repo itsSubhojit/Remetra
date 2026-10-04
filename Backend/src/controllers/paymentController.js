@@ -3,6 +3,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {Payment} from "../models/Payment.model.js"
 import { createCashfreeOrder, fetchCashfreeOrder, fetchCashfreeOrderPayments, verifyCashfreeWebhookSignature } from "../services/cashfreeService.js"
+import { analyzeReceipt } from "../services/receiptAiService.js"
 
 
 export const paymentUser = asyncHandler(async (req, res, next) =>{
@@ -404,3 +405,15 @@ export const handleCashfreeWebhook = asyncHandler(async (req, res, next) => {
     // Acknowledge other event types (e.g. PAYMENT_FAILED_WEBHOOK, USER_DROPPED_WEBHOOK)
     return res.status(200).json({ status: "acknowledged", type: eventType });
 });
+
+export const extractReceiptData = asyncHandler(async(req, res, next) =>{
+    const imageData = req.body.imageData
+    const mimeType = req.body.mimeType
+
+    const analyze = await analyzeReceipt(imageData, mimeType);
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200, "Your Data Successfully Extracted...", analyze)
+    )
+})
