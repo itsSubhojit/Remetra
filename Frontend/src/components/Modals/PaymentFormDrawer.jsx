@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { paymentsApi } from "../../services/api";
+import { normalizeDateToISO } from "../../utils/dateUtils";
 
 const PROVIDER_SUGGESTIONS = {
   Recharge: ["Jio", "Airtel", "Vi", "BSNL", "Google Fi", "Other"],
@@ -7,6 +10,8 @@ const PROVIDER_SUGGESTIONS = {
 };
 
 export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = null }) => {
+  const { getToken } = useAuth();
+
   const [category, setCategory] = useState("Recharge");
   const [personName, setPersonName] = useState("");
   const [title, setTitle] = useState("");
@@ -27,6 +32,38 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // AI Receipt Extraction States
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState("");
+  const [extractionSuccess, setExtractionSuccess] = useState(false);
+  const [undetectedFields, setUndetectedFields] = useState([]);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const resetFormToDefaults = () => {
+    setCategory("Recharge");
+    setPersonName("");
+    setTitle("");
+    setProvider(PROVIDER_SUGGESTIONS["Recharge"][0]);
+    setCustomProvider(false);
+    setAmount("");
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 7);
+    setDueDate(defaultDate.toISOString().split("T")[0]);
+    setFrequency("Monthly");
+    setStatus("Upcoming");
+    setPaidDate("");
+    setNotes("");
+
+    // Category-specific defaults
+    setMobileNumber("");
+    setRechargeType("Prepaid");
+    setValidityDays("");
+    setConsumerId("");
+  };
 
   useEffect(() => {
     if (editingPayment) {
@@ -57,36 +94,224 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
       setConsumerId(editingPayment.consumerId || "");
     } else {
       // Default clean state for new payment
-      setCategory("Recharge");
-      setPersonName("");
-      setTitle("");
-      setProvider(PROVIDER_SUGGESTIONS["Recharge"][0]);
-      setCustomProvider(false);
-      setAmount("");
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() + 7);
-      setDueDate(defaultDate.toISOString().split("T")[0]);
-      setFrequency("Monthly");
-      setStatus("Upcoming");
-      setPaidDate("");
-      setNotes("");
-
-      // Category-specific defaults
-      setMobileNumber("");
-      setRechargeType("Prepaid");
-      setValidityDays("");
-      setConsumerId("");
+      resetFormToDefaults();
     }
+
+    // Reset extraction state when drawer opens or changes target
     setError("");
+    setIsExtracting(false);
+    setExtractionError("");
+    setExtractionSuccess(false);
+    setUndetectedFields([]);
+    setPreviewUrl("");
+    setFileName("");
+    setIsDragging(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }, [editingPayment, isOpen]);
 
   const handleCategoryChange = (newCat) => {
     setCategory(newCat);
+    setUndetectedFields((prev) => prev.filter((f) => f !== "category"));
     const suggested = PROVIDER_SUGGESTIONS[newCat];
     if (suggested && suggested.length > 0) {
       setProvider(suggested[0]);
       setCustomProvider(false);
     }
+  };
+
+  /**
+   * Processes selected receipt file, validates type/size, extracts data via AI backend,
+   * validates document type, and populates form fields without auto-saving.
+   */
+  const handleReceiptFile = (file) => {
+    if (!file) return;
+
+    // 1. File Type Check
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setExtractionError("Unsupported file type. Please upload a JPG, PNG, or WebP image.");
+      return;
+    }
+
+    // 2. Client-Side Size Check (Max 8MB)
+    const MAX_SIZE = 8 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setExtractionError("File size exceeds 8MB. Please choose a smaller image.");
+      return;
+    }
+
+    // 3. Clear previous extraction error/success
+    setExtractionError("");
+    setExtractionSuccess(false);
+    setUndetectedFields([]);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result;
+      if (typeof dataUrl !== "string") return;
+      const base64Data = dataUrl.split(",")[1];
+
+      setFileName(file.name);
+      setIsExtracting(true);
+
+      try {
+        const token = await getToken();
+        if (!token) {
+          throw new Error("Authentication required. Please log in again.");
+        }
+
+        const res = await paymentsApi.extractReceipt(
+          {
+            imageData: base64Data,
+            mimeType: file.type,
+          },
+          token
+        );
+
+        const extracted = res?.data;
+        if (!extracted) {
+          throw new Error("No data returned from receipt analysis.");
+        }
+
+        // Validation: Verify document is a supported payment receipt/bill
+        if (extracted.isValidReceipt === false) {
+          setPreviewUrl("");
+          setFileName("");
+          setExtractionSuccess(false);
+          setUndetectedFields([]);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          setExtractionError("Not a supported bill or receipt. Please upload a valid payment receipt or bill.");
+          return;
+        }
+
+        // Supported receipt: set preview URL and populate form state
+        setPreviewUrl(dataUrl);
+
+        const missing = [];
+
+        // Category (strictly one of Recharge, Electricity, Subscription)
+        if (extracted.category && ["Recharge", "Electricity", "Subscription"].includes(extracted.category)) {
+          setCategory(extracted.category);
+          if (extracted.provider) {
+            const suggestions = PROVIDER_SUGGESTIONS[extracted.category] || [];
+            if (suggestions.includes(extracted.provider)) {
+              setProvider(extracted.provider);
+              setCustomProvider(false);
+            } else {
+              setProvider(extracted.provider);
+              setCustomProvider(true);
+            }
+          } else {
+            missing.push("provider");
+          }
+        } else {
+          missing.push("category");
+          if (extracted.provider) {
+            setProvider(extracted.provider);
+            setCustomProvider(true);
+          } else {
+            missing.push("provider");
+          }
+        }
+
+        // Person Name
+        if (extracted.personName && typeof extracted.personName === "string" && extracted.personName.trim()) {
+          setPersonName(extracted.personName.trim());
+        } else {
+          missing.push("personName");
+        }
+
+        // Title
+        if (extracted.title && typeof extracted.title === "string" && extracted.title.trim()) {
+          setTitle(extracted.title.trim());
+        } else {
+          missing.push("title");
+        }
+
+        // Amount
+        if (extracted.amount !== null && extracted.amount !== undefined && !isNaN(Number(extracted.amount))) {
+          setAmount(String(extracted.amount));
+        } else {
+          missing.push("amount");
+        }
+
+        // Due Date
+        if (extracted.dueDate) {
+          const normalized = normalizeDateToISO(extracted.dueDate);
+          if (normalized) {
+            setDueDate(normalized);
+          } else {
+            missing.push("dueDate");
+          }
+        } else {
+          missing.push("dueDate");
+        }
+
+        // Frequency
+        if (extracted.frequency && ["Weekly", "Monthly", "Yearly"].includes(extracted.frequency)) {
+          setFrequency(extracted.frequency);
+        }
+
+        setUndetectedFields(missing);
+        setExtractionSuccess(true);
+      } catch (err) {
+        // Safe diagnostic logging: log only sanitized metadata, never raw error message or request payloads
+        const errorStatus = err?.status || "Unknown";
+        const errorType = err?.name || "ExtractionError";
+        console.error(`[Receipt AI Client] Extraction request failed. Status: ${errorStatus}, Type: ${errorType}`);
+
+        setPreviewUrl("");
+        setFileName("");
+        setExtractionSuccess(false);
+        setUndetectedFields([]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+
+        // Friendly error message: never expose raw backend JSON, Gemini quota, or technical error messages
+        let userMessage = "We couldn’t process your receipt at the moment. Please try again later or enter the payment details manually.";
+        if (err.message && err.message.includes("Authentication required")) {
+          userMessage = "Authentication required. Please log in again.";
+        }
+
+        setExtractionError(userMessage);
+      } finally {
+        setIsExtracting(false);
+      }
+    };
+
+    reader.onerror = () => {
+      setPreviewUrl("");
+      setFileName("");
+      setExtractionSuccess(false);
+      setUndetectedFields([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setExtractionError("We couldn’t process your receipt at the moment. Please try again later or enter the payment details manually.");
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  /**
+   * Resets scanner state AND resets the Add Payment form to its clean initial default state,
+   * clearing any AI-populated or edited values.
+   */
+  const handleClearReceipt = () => {
+    setPreviewUrl("");
+    setFileName("");
+    setExtractionSuccess(false);
+    setExtractionError("");
+    setUndetectedFields([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    resetFormToDefaults();
   };
 
   const handleSubmit = async (e) => {
@@ -142,7 +367,6 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
         payload.validityDays = Number(validityDays);
       }
     } else if (category === "Electricity") {
-      // consumerId is OPTIONAL
       if (consumerId.trim()) {
         payload.consumerId = consumerId.trim();
       }
@@ -203,9 +427,139 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
               </div>
             )}
 
+            {/* AI Receipt Upload Card (Only visible in Add Payment flow) */}
+            {!editingPayment && (
+              <div className="rounded-xl border border-outline-variant/60 bg-surface-container-lowest/90 p-3.5 transition-all space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary flex-shrink-0">
+                      <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+                    </div>
+                    <div>
+                      <h3 className="text-label-md font-label-md font-semibold text-on-surface">Auto-fill with AI Scanner</h3>
+                      <p className="text-label-sm text-outline">Upload a bill or recharge receipt to populate details</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleReceiptFile(file);
+                    e.target.value = "";
+                  }}
+                />
+
+                {isExtracting ? (
+                  <div className="p-4 rounded-lg bg-primary-container/10 border border-primary/30 flex items-center justify-center gap-3">
+                    <span className="material-symbols-outlined text-primary text-[22px] animate-spin">progress_activity</span>
+                    <div className="text-left">
+                      <p className="text-body-sm font-medium text-on-surface">Analyzing bill with AI...</p>
+                      <p className="text-label-sm text-outline">Extracting Your Receipt Data's</p>
+                    </div>
+                  </div>
+                ) : previewUrl && extractionSuccess ? (
+                  <div className="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/50 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={previewUrl}
+                        alt="Receipt preview"
+                        className="w-11 h-11 object-cover rounded-md border border-outline-variant flex-shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-body-sm font-medium text-on-surface truncate">{fileName}</p>
+                        <div className="flex items-center gap-1 text-label-sm text-emerald-400 mt-0.5">
+                          <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                          <span>Extracted — review fields below</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearReceipt}
+                      className="px-2.5 py-1 rounded-lg text-label-sm font-medium text-outline hover:text-error hover:bg-error-container/20 border border-outline-variant/60 hover:border-error/40 transition-colors flex items-center gap-1 flex-shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                      <span>Clear</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) handleReceiptFile(file);
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-all ${
+                      isDragging
+                        ? "border-primary bg-primary-container/15 text-primary"
+                        : "border-outline-variant/50 hover:border-primary/60 hover:bg-surface-container-low text-outline hover:text-on-surface"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="material-symbols-outlined text-[20px] text-primary">upload_file</span>
+                      <span className="text-body-sm font-medium">Click to upload or drag & drop</span>
+                    </div>
+                    <p className="text-label-sm text-outline mt-0.5">Supports JPG, PNG, WebP (Max 8MB)</p>
+                  </div>
+                )}
+
+                {/* Extraction Error Alert */}
+                {extractionError && (
+                  <div className="p-2.5 rounded-lg bg-error-container/20 border border-error/40 text-error text-label-md flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="material-symbols-outlined text-[16px] flex-shrink-0">error</span>
+                      <span className="text-body-sm">{extractionError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearReceipt}
+                      className="px-2 py-0.5 rounded text-label-sm font-medium hover:bg-error-container/40 border border-error/30 transition-colors flex items-center gap-1 flex-shrink-0 text-error"
+                      title="Clear error"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">close</span>
+                      <span>Clear</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Undetected / Null Notice Banner */}
+                {extractionSuccess && undetectedFields.length > 0 && (
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-label-md flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-amber-400 flex-shrink-0">info</span>
+                    <span>
+                      {`Some details couldn't be detected (${undetectedFields.join(", ")}). Please review and complete below.`}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Category Selector Tabs */}
             <div>
-              <label className="text-label-md font-label-md text-outline block mb-2">Category</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-label-md font-label-md text-outline">Category</label>
+                {undetectedFields.includes("category") && (
+                  <span className="text-amber-400 text-label-sm flex items-center gap-1 font-medium">
+                    <span className="material-symbols-outlined text-[13px]">info</span> Couldn't detect — please select
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2 bg-surface-container-lowest p-1.5 rounded-xl border border-outline-variant/50">
                 <button
                   type="button"
@@ -251,25 +605,53 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
             {/* Assigned Person & Payment Title */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-label-md font-label-md text-outline block mb-1.5">Assigned Person</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-label-md font-label-md text-outline">Assigned Person</label>
+                  {undetectedFields.includes("personName") && (
+                    <span className="text-amber-400 text-label-sm flex items-center gap-1 font-medium">
+                      <span className="material-symbols-outlined text-[13px]">info</span> Couldn't detect
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={personName}
-                  onChange={(e) => setPersonName(e.target.value)}
+                  onChange={(e) => {
+                    setPersonName(e.target.value);
+                    setUndetectedFields((prev) => prev.filter((f) => f !== "personName"));
+                  }}
                   placeholder="e.g. Self, Alex, Household, Office..."
-                  className="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                  className={`w-full h-10 bg-surface-container-lowest border rounded-lg px-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none ${
+                    undetectedFields.includes("personName")
+                      ? "border-amber-500/80 focus:border-amber-400"
+                      : "border-outline-variant focus:border-primary"
+                  }`}
                   required
                 />
               </div>
 
               <div>
-                <label className="text-label-md font-label-md text-outline block mb-1.5">Payment Title</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-label-md font-label-md text-outline">Payment Title</label>
+                  {undetectedFields.includes("title") && (
+                    <span className="text-amber-400 text-label-sm flex items-center gap-1 font-medium">
+                      <span className="material-symbols-outlined text-[13px]">info</span> Couldn't detect
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setUndetectedFields((prev) => prev.filter((f) => f !== "title"));
+                  }}
                   placeholder="e.g. Jio 5G Unlimited"
-                  className="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                  className={`w-full h-10 bg-surface-container-lowest border rounded-lg px-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none ${
+                    undetectedFields.includes("title")
+                      ? "border-amber-500/80 focus:border-amber-400"
+                      : "border-outline-variant focus:border-primary"
+                  }`}
                   required
                 />
               </div>
@@ -278,7 +660,14 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
             {/* Suggested Provider Dropdown + Custom Provider Input */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-label-md font-label-md text-outline">Service Provider</label>
+                <div className="flex items-center gap-2">
+                  <label className="text-label-md font-label-md text-outline">Service Provider</label>
+                  {undetectedFields.includes("provider") && (
+                    <span className="text-amber-400 text-label-sm flex items-center gap-1 font-medium">
+                      <span className="material-symbols-outlined text-[13px]">info</span> Couldn't detect
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setCustomProvider(!customProvider)}
@@ -292,15 +681,23 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
                 <input
                   type="text"
                   value={provider}
-                  onChange={(e) => setProvider(e.target.value)}
+                  onChange={(e) => {
+                    setProvider(e.target.value);
+                    setUndetectedFields((prev) => prev.filter((f) => f !== "provider"));
+                  }}
                   placeholder="e.g. WBSEDCL, Netflix, Vi"
-                  className="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
+                  className={`w-full h-10 bg-surface-container-lowest border rounded-lg px-3 text-body-md text-on-surface placeholder:text-outline focus:outline-none ${
+                    undetectedFields.includes("provider")
+                      ? "border-amber-500/80 focus:border-amber-400"
+                      : "border-outline-variant focus:border-primary"
+                  }`}
                   required
                 />
               ) : (
                 <select
                   value={provider}
                   onChange={(e) => {
+                    setUndetectedFields((prev) => prev.filter((f) => f !== "provider"));
                     if (e.target.value === "Other") {
                       setCustomProvider(true);
                       setProvider("");
@@ -308,7 +705,11 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
                       setProvider(e.target.value);
                     }
                   }}
-                  className="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary"
+                  className={`w-full h-10 bg-surface-container-lowest border rounded-lg px-3 text-body-md text-on-surface focus:outline-none ${
+                    undetectedFields.includes("provider")
+                      ? "border-amber-500/80 focus:border-amber-400"
+                      : "border-outline-variant focus:border-primary"
+                  }`}
                 >
                   {(PROVIDER_SUGGESTIONS[category] || []).map((prov) => (
                     <option key={prov} value={prov}>
@@ -409,7 +810,14 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
             {/* Amount & Frequency */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-label-md font-label-md text-outline block mb-1.5">Amount (₹)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-label-md font-label-md text-outline">Amount (₹)</label>
+                  {undetectedFields.includes("amount") && (
+                    <span className="text-amber-400 text-label-sm flex items-center gap-1 font-medium">
+                      <span className="material-symbols-outlined text-[13px]">info</span> Couldn't detect
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline font-semibold">₹</span>
                   <input
@@ -417,9 +825,16 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
                     min="1"
                     step="any"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      setUndetectedFields((prev) => prev.filter((f) => f !== "amount"));
+                    }}
                     placeholder="0.00"
-                    className="w-full h-10 pl-7 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary font-numeric-metric"
+                    className={`w-full h-10 pl-7 pr-3 bg-surface-container-lowest border rounded-lg text-body-md text-on-surface placeholder:text-outline focus:outline-none font-numeric-metric ${
+                      undetectedFields.includes("amount")
+                        ? "border-amber-500/80 focus:border-amber-400"
+                        : "border-outline-variant focus:border-primary"
+                    }`}
                     required
                   />
                 </div>
@@ -442,12 +857,26 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
             {/* Due Date & Status */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-label-md font-label-md text-outline block mb-1.5">Due / Expiry Date</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-label-md font-label-md text-outline">Due / Expiry Date</label>
+                  {undetectedFields.includes("dueDate") && (
+                    <span className="text-amber-400 text-label-sm flex items-center gap-1 font-medium">
+                      <span className="material-symbols-outlined text-[13px]">info</span> Couldn't detect
+                    </span>
+                  )}
+                </div>
                 <input
                   type="date"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full h-10 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 text-body-md text-on-surface focus:outline-none focus:border-primary"
+                  onChange={(e) => {
+                    setDueDate(e.target.value);
+                    setUndetectedFields((prev) => prev.filter((f) => f !== "dueDate"));
+                  }}
+                  className={`w-full h-10 bg-surface-container-lowest border rounded-lg px-3 text-body-md text-on-surface focus:outline-none ${
+                    undetectedFields.includes("dueDate")
+                      ? "border-amber-500/80 focus:border-amber-400"
+                      : "border-outline-variant focus:border-primary"
+                  }`}
                   required
                 />
               </div>
@@ -505,7 +934,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
             <button
               type="submit"
               form="paymentForm"
-              disabled={submitting}
+              disabled={submitting || isExtracting}
               className="px-5 py-2 bg-gradient-to-r from-primary-container to-secondary-container text-on-primary rounded-xl font-label-lg text-label-lg shadow-lg shadow-primary-container/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {submitting && <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>}

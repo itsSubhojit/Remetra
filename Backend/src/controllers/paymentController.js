@@ -407,13 +407,25 @@ export const handleCashfreeWebhook = asyncHandler(async (req, res, next) => {
 });
 
 export const extractReceiptData = asyncHandler(async(req, res, next) =>{
-    const imageData = req.body.imageData
-    const mimeType = req.body.mimeType
+    const imageData = req.body.imageData;
+    const mimeType = req.body.mimeType;
 
-    const analyze = await analyzeReceipt(imageData, mimeType);
+    if (!imageData || !mimeType) {
+        throw new ApiError(400, "Image data and MIME type are required.");
+    }
 
-    return res.status(200)
-    .json(
-        new ApiResponse(200, "Your Data Successfully Extracted...", analyze)
-    )
-})
+    try {
+        const analyze = await analyzeReceipt(imageData, mimeType);
+
+        return res.status(200).json(
+            new ApiResponse(200, "Your Data Successfully Extracted...", analyze)
+        );
+    } catch (err) {
+        // Log only sanitized metadata (operation, status, error name) — never log raw image or request payload
+        const errorStatus = err?.status || err?.statusCode || err?.code || 500;
+        const errorType = err?.name || "ReceiptAiServiceError";
+        console.error(`[Receipt AI Controller] Analysis failed. Status: ${errorStatus}, Type: ${errorType}`);
+
+        throw new ApiError(500, "We couldn’t process your receipt at the moment. Please try again later or enter the payment details manually.");
+    }
+});

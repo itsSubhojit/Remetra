@@ -60,6 +60,7 @@ export const paymentsApi = {
   deleteAccount: (token) => apiRequest("/api/payments/account", { method: "DELETE", token }),
   initiatePayment: (id, token) => apiRequest(`/api/payments/${id}/pay`, { method: "POST", token }),
   verifyPayment: (id, token) => apiRequest(`/api/payments/${id}/verify-payment`, { method: "GET", token }),
+  extractReceipt: (receiptData, token) => apiRequest("/api/payments/extract-receipt", { method: "POST", body: receiptData, token }),
   markAsPaid: (id, token) => {
     return apiRequest(`/api/payments/${id}`, {
       method: "PUT",

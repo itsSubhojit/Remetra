@@ -570,6 +570,73 @@ The expected next step is to stage, commit, and push these changes to GitHub to 
 
 ---
 
+## 8. Receipt AI Integration Architecture & Verification
+
+Remetra integrates Google Gemini multimodal intelligence to allow household users to scan paper bills or digital receipts and automatically populate the "Add Payment" form in `PaymentFormDrawer.jsx`.
+
+### A. End-to-End Pipeline
+```
+[User Dropzone / File Picker]
+            │ (Selects PNG/JPEG/WEBP <= 8MB)
+            ▼
+[Client-side Pre-flight Validation]
+      ├── Type check: image/jpeg, image/png, image/webp
+      └── Size check: file.size <= 8 * 1024 * 1024 (8MB)
+            │
+            ▼ (Encodes to raw Base64 without data URL prefix)
+[api.extractReceipt] ── (Bearer Token via Firebase Auth) ──► [POST /api/payments/extract-receipt]
+                                                                        │
+                                                                        ▼
+                                                             [Backend receiptAiService]
+                                                              (Google Gemini 2.5 Flash)
+                                                                        │
+                                                                        ▼ (Structured JSON)
+[Frontend Form Population] ◄─────────────────────────────────────────────┘
+      ├── Smart Provider Matching (Standard vs Custom Provider)
+      ├── Modular Date Normalization (dateUtils.js)
+      ├── Visual Cues for Undetected Fields ("Couldn't detect — please fill in")
+      └── Form remains editable; user explicitly clicks "Save Payment"
+```
+
+### B. Security & Privacy Guarantees
+1. **Client-Side Size & Type Enforcement**: Files over 8MB or non-image types are rejected synchronously in the browser before invoking FileReader or creating any network traffic.
+2. **Authenticated Transport**: Requests attach standard Firebase ID Bearer tokens, adhering to Remetra's zero-trust API security model.
+3. **Zero-Log & Non-Persistence Policy**: Raw `imageData` is strictly scrubbed from browser console and error telemetry. Uploaded receipt images are held only in ephemeral memory during processing and are never written to `localStorage` or `sessionStorage`.
+4. **Non-Auto-Submit Guarantee**: Receipt extraction strictly populates the React form state; it never submits the form automatically. The user retains complete agency to review, edit, or cancel before clicking "Save Payment".
+
+### C. Date Normalization & Timezone Resilience
+To prevent calendar date shifts in eastern timezones (e.g. UTC+05:30), `Frontend/src/utils/dateUtils.js` implements `normalizeDateToISO`:
+- Handles standard ISO (`YYYY-MM-DD`), slash formats (`DD/MM/YYYY`, `YYYY/MM/DD`), hyphenated dates (`DD-MM-YYYY`), and localized strings (`15 Oct 2026`).
+- Uses local calendar extraction (`getFullYear()`, `getMonth()`, `getDate()`) rather than UTC `.toISOString().split('T')[0]`, eliminating off-by-one day errors.
+
+### D. Document Validity Classification & Scanner Error Handling
+To eliminate confusing states where non-billing documents (such as source code screenshots, memes, random photographs, or blank templates) were treated as successful extractions:
+1. **Schema-Level Classification (`isValidReceipt`)**: Gemini evaluates document type against Remetra's supported payment categories (**Recharge**, **Electricity**, **Subscription**).
+2. **Clean Rejection of Non-Receipts**: If `isValidReceipt: false`, the scanner immediately displays a single concise message (`"Not a supported bill or receipt. Please upload a valid payment receipt or bill."`), suppresses the `"Extracted — review fields below"` preview state, and populates zero form fields.
+3. **Resilience to Incomplete Bills**: A genuine bill where certain fields (e.g. consumer ID or person name) cannot be detected is still classified as `isValidReceipt: true` and proceeds to populate detected fields with amber indicators on undetected fields.
+4. **Comprehensive Clear Action**: Clicking "Clear" on the scanner resets the upload dropzone, removes preview images, clears error states, and restores all form fields (including any edited values) to clean initial defaults.
+
+### E. Automated Test Verification Results
+The integration was validated across a comprehensive 10-test verification suite (`scratch/test_receipt_ai_fixes.js`):
+
+| Test Case | Scenario / Upload | Observed Behavior | Status |
+|---|---|---|---|
+| **TEST 1** | Valid electricity bill (`clean_bill.png`) | `isValidReceipt: true`. Provider (WBSEDCL), Amount (₹2,450), Electricity category extracted. Success preview displayed. | **PASSED** |
+| **TEST 2** | Valid recharge receipt (`recharge_receipt.png`) | `isValidReceipt: true`. Provider (Jio), Amount (₹299), Recharge category extracted. | **PASSED** |
+| **TEST 3** | Valid subscription receipt (`subscription_receipt.png`) | `isValidReceipt: true`. Provider (Netflix), Amount (₹649), Subscription category extracted. | **PASSED** |
+| **TEST 4** | Source code screenshot (`code_screenshot.png`) | `isValidReceipt: false`. Rejected with `"Not a supported bill or receipt..."`. 0 fields populated. No success UI. | **PASSED** |
+| **TEST 5** | Blank placeholder image (`blank_template.png`) | `isValidReceipt: false`. Rejected cleanly. No fields populated. | **PASSED** |
+| **TEST 6** | Valid bill with missing fields (`partial_bill.png`) | `isValidReceipt: true`. Provider (CESC Limited) & Amount (₹1,850) extracted. Missing fields flagged with amber badges without rejecting bill. | **PASSED** |
+| **TEST 7** | Click "Clear" after successful extraction | Image, preview thumbnail, success banner, and all form fields reset to initial clean defaults. | **PASSED** |
+| **TEST 8** | Click "Clear" after invalid/failed extraction | Scanner returns to initial dropzone state; error cleared; form remains clean. | **PASSED** |
+| **TEST 9** | Manual form entry workflow | Manual payment entry, category switching, validation, and submission operate completely independently. | **PASSED** |
+| **TEST 10** | Security & Privacy check | 0 raw base64 logging in console, 0 web storage persistence, 0 automatic payment submission. | **PASSED** |
+
+- **Unit Suite (`test_receipt_ai_frontend.js`)**: 27/27 tests passed.
+- **Frontend Production Build (`vite build`)**: 0 errors, build completed in 2.13s.
+
+---
+
 *Report Generated for Remetra Project codebase.*
 
 
