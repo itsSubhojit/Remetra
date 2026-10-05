@@ -49,7 +49,7 @@ app.use(
     verify: (req, res, buf) => {
       req.rawBody = buf.toString();
     },
-    limit: "10mb"
+    limit: "15mb"
   })
 );
 

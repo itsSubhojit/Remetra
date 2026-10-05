@@ -39,6 +39,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
   const [extractionSuccess, setExtractionSuccess] = useState(false);
   const [undetectedFields, setUndetectedFields] = useState([]);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [fileType, setFileType] = useState("");
   const [fileName, setFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
@@ -104,6 +105,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
     setExtractionSuccess(false);
     setUndetectedFields([]);
     setPreviewUrl("");
+    setFileType("");
     setFileName("");
     setIsDragging(false);
     if (fileInputRef.current) {
@@ -129,16 +131,16 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
     if (!file) return;
 
     // 1. File Type Check
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const allowedTypes = ["image/jpg", "image/jpeg", "image/png", "image/webp", "application/pdf"];
     if (!allowedTypes.includes(file.type)) {
-      setExtractionError("Unsupported file type. Please upload a JPG, PNG, or WebP image.");
+      setExtractionError("Unsupported file type. Please upload a JPG, PNG, WebP image or PDF document.");
       return;
     }
 
-    // 2. Client-Side Size Check (Max 8MB)
-    const MAX_SIZE = 8 * 1024 * 1024;
+    // 2. Client-Side Size Check (Max 10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      setExtractionError("File size exceeds 8MB. Please choose a smaller image.");
+      setExtractionError("File size exceeds 10MB. Please choose a smaller file.");
       return;
     }
 
@@ -154,6 +156,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
       const base64Data = dataUrl.split(",")[1];
 
       setFileName(file.name);
+      setFileType(file.type);
       setIsExtracting(true);
 
       try {
@@ -178,6 +181,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
         // Validation: Verify document is a supported payment receipt/bill
         if (extracted.isValidReceipt === false) {
           setPreviewUrl("");
+          setFileType("");
           setFileName("");
           setExtractionSuccess(false);
           setUndetectedFields([]);
@@ -265,6 +269,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
         console.error(`[Receipt AI Client] Extraction request failed. Status: ${errorStatus}, Type: ${errorType}`);
 
         setPreviewUrl("");
+        setFileType("");
         setFileName("");
         setExtractionSuccess(false);
         setUndetectedFields([]);
@@ -286,6 +291,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
 
     reader.onerror = () => {
       setPreviewUrl("");
+      setFileType("");
       setFileName("");
       setExtractionSuccess(false);
       setUndetectedFields([]);
@@ -304,6 +310,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
    */
   const handleClearReceipt = () => {
     setPreviewUrl("");
+    setFileType("");
     setFileName("");
     setExtractionSuccess(false);
     setExtractionError("");
@@ -446,7 +453,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpg,image/jpeg,image/png,image/webp,application/pdf"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -466,13 +473,29 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
                 ) : previewUrl && extractionSuccess ? (
                   <div className="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={previewUrl}
-                        alt="Receipt preview"
-                        className="w-11 h-11 object-cover rounded-md border border-outline-variant flex-shrink-0"
-                      />
+                      {fileType === "application/pdf" || previewUrl.startsWith("data:application/pdf") ? (
+                        <div
+                          className="w-11 h-11 rounded-md bg-error-container/20 border border-error/30 flex items-center justify-center text-error flex-shrink-0"
+                          title="PDF Document"
+                        >
+                          <span className="material-symbols-outlined text-[24px]">picture_as_pdf</span>
+                        </div>
+                      ) : (
+                        <img
+                          src={previewUrl}
+                          alt="Receipt preview"
+                          className="w-11 h-11 object-cover rounded-md border border-outline-variant flex-shrink-0"
+                        />
+                      )}
                       <div className="min-w-0">
-                        <p className="text-body-sm font-medium text-on-surface truncate">{fileName}</p>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <p className="text-body-sm font-medium text-on-surface truncate">{fileName}</p>
+                          {(fileType === "application/pdf" || previewUrl.startsWith("data:application/pdf")) && (
+                            <span className="px-1.5 py-0.5 bg-error-container/30 text-error border border-error/20 text-[10px] font-semibold rounded uppercase tracking-wider flex-shrink-0">
+                              PDF
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1 text-label-sm text-emerald-400 mt-0.5">
                           <span className="material-symbols-outlined text-[14px]">check_circle</span>
                           <span>Extracted — review fields below</span>
@@ -515,7 +538,7 @@ export const PaymentFormDrawer = ({ isOpen, onClose, onSave, editingPayment = nu
                       <span className="material-symbols-outlined text-[20px] text-primary">upload_file</span>
                       <span className="text-body-sm font-medium">Click to upload or drag & drop</span>
                     </div>
-                    <p className="text-label-sm text-outline mt-0.5">Supports JPG, PNG, WebP (Max 8MB)</p>
+                    <p className="text-label-sm text-outline mt-0.5">Supports JPG, JPEG, PNG, WebP, PDF (Max 10MB)</p>
                   </div>
                 )}
 

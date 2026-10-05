@@ -17,13 +17,13 @@ export const analyzeReceipt = async(base64Image, mimeType) =>{
             text: `You are Remetra's AI receipt and bill analysis assistant.
 Remetra supports three payment categories: Recharge (mobile/DTH), Electricity (utility power bills), and Subscription (digital services/streaming).
 
-Analyze this image and determine if it is a valid bill or payment receipt matching one of these categories.
+Analyze this image or PDF document and determine if it is a valid bill or payment receipt and matching one of these categories.
 
 Output a valid JSON object with the following fields:
 1. isValidReceipt (boolean):
-   - Set to true if the image is a genuine bill, utility bill, mobile/DTH recharge confirmation/receipt, or subscription invoice/payment receipt.
-   - Set to false if the image is NOT a payment receipt/bill (for example: source code, programming screenshot, meme, selfie or random photo, blank image, general UI screenshot, or document unrelated to a payment/bill).
-   - IMPORTANT: A genuine bill or receipt where some fields cannot be detected or are missing is STILL valid (isValidReceipt: true). Only set false if the image is genuinely not a bill or payment receipt.
+   - Set to true if the document is a genuine bill, utility bill, mobile/DTH recharge confirmation/receipt, or subscription invoice/payment receipt.
+   - Set to false if the uploaded document is NOT a payment receipt/bill (for example: source code, programming screenshot, meme, selfie or random photo, blank image, general UI screenshot, or document unrelated to a payment/bill).
+   - IMPORTANT: A genuine bill or receipt where some fields cannot be detected or are missing is STILL valid (isValidReceipt: true). Only set false if the document is genuinely not a bill or payment receipt.
 
 2. If isValidReceipt is false, set all other fields to null.
 
